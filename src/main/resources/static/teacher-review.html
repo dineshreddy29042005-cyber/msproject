@@ -126,6 +126,29 @@
 </div>
 </div>
 <div class="toast-container" id="toastContainer"></div>
+
+<!-- Floating AI Chat -->
+<button class="float-chat-btn" id="floatChatBtn">🤖<span class="notif">!</span></button>
+<div class="float-chat-panel" id="floatChatPanel">
+  <div class="chat-container">
+    <div class="chat-header">
+      <div class="chat-avatar">🤖</div>
+      <div><div class="chat-name">PlagiGuard AI</div>
+        <div class="chat-status"><div style="width:6px;height:6px;border-radius:50%;background:var(--accent)"></div>Online</div>
+      </div>
+    </div>
+    <div class="chat-messages" id="floatMessages"></div>
+    <div class="chat-prompts">
+      <span class="prompt-chip">[Summary]</span>
+      <span class="prompt-chip">[Show suspicious sections]</span>
+      <span class="prompt-chip">[Check citations]</span>
+    </div>
+    <div class="chat-input-row">
+      <textarea class="chat-input" rows="1" placeholder="Ask about the analysis…"></textarea>
+      <button class="btn btn-primary chat-send-btn" style="padding:.55rem .8rem"><i class="fa-solid fa-paper-plane"></i></button>
+    </div>
+  </div>
+</div>
 <script src="js/engine.js"></script>
 <script>
 const decisions = {};   // matchId -> {status, comment}
@@ -134,6 +157,7 @@ let currentTypeFilter = '';
 
 document.addEventListener('DOMContentLoaded',()=>{
   initAdvNav();
+  initFloatingChat();
   document.getElementById('totalCount').textContent = MOCK_DATA.matches.length;
   document.getElementById('statPending').textContent = MOCK_DATA.matches.length;
   renderReviewCards();
