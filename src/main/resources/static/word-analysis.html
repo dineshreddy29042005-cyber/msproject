@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Word Analysis — PlagiaCheck</title>
+<link rel="stylesheet" href="css/advanced.css"/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+<style>
+.legend-row{display:flex;gap:1.25rem;flex-wrap:wrap;padding:.85rem 1rem;background:var(--bg-card2);border-bottom:1px solid var(--border);font-size:.78rem}
+.legend-item{display:flex;align-items:center;gap:.4rem}
+.legend-swatch{width:28px;height:5px;border-radius:2px}
+.phrase-card{background:var(--bg-card2);border:1px solid var(--border);border-radius:var(--r-md);padding:1rem;margin-bottom:.75rem;transition:var(--t-base)}
+.phrase-card:hover{border-color:var(--border-hl)}
+.transform-arrow{text-align:center;color:var(--text-muted);padding:.2rem 0;font-size:1.1rem}
+.freq-bar{height:22px;background:rgba(255,255,255,.05);border-radius:4px;overflow:hidden;position:relative}
+.freq-fill{height:100%;border-radius:4px;transition:width 1s ease;display:flex;align-items:center;padding-left:.5rem;font-size:.72rem;font-weight:700;color:rgba(255,255,255,.85)}
+</style>
+</head>
+<body>
+<div class="app-shell">
+<aside class="adv-sidebar">
+  <div class="sidebar-brand"><div class="brand-logo">P</div><div><div class="brand-text">PlagiaCheck</div><div class="brand-sub">Academic Integrity AI</div></div></div>
+  <div class="nav-section">
+    <div class="nav-section-label">Analysis</div>
+    <a href="advanced-dashboard.html" class="nav-item"><span class="nav-icon"><i class="fa-solid fa-gauge-high"></i></span><span>Overview</span></a>
+    <a href="comparison.html" class="nav-item"><span class="nav-icon"><i class="fa-solid fa-code-compare"></i></span><span>Document Comparison</span></a>
+    <a href="word-analysis.html" class="nav-item active"><span class="nav-icon"><i class="fa-solid fa-spell-check"></i></span><span>Word Analysis</span></a>
+    <a href="visualization.html" class="nav-item"><span class="nav-icon"><i class="fa-solid fa-cube"></i></span><span>3D Visualization</span></a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-label">Intelligence</div>
+    <a href="ai-assistant.html" class="nav-item"><span class="nav-icon"><i class="fa-solid fa-robot"></i></span><span>AI Assistant</span></a>
+    <a href="teacher-review.html" class="nav-item"><span class="nav-icon"><i class="fa-solid fa-user-check"></i></span><span>Teacher Review</span></a>
+    <a href="report.html" class="nav-item"><span class="nav-icon"><i class="fa-solid fa-file-lines"></i></span><span>Reports</span></a>
+  </div>
+  <div class="nav-section">
+    <a href="advanced-dashboard.html" class="nav-item"><span class="nav-icon"><i class="fa-solid fa-arrow-left"></i></span><span>Back</span></a>
+    <a href="#" class="nav-item logout-btn"><span class="nav-icon"><i class="fa-solid fa-right-from-bracket"></i></span><span>Logout</span></a>
+  </div>
+  <div class="sidebar-bottom"><div class="ai-status"><div class="ai-pulse"></div><div><div style="font-size:.8rem;font-weight:600">PlagiGuard AI</div><div style="font-size:.68rem;color:var(--text-muted)">Active</div></div></div></div>
+</aside>
+
+<div class="page-content">
+  <div class="adv-topbar">
+    <div class="topbar-left"><div class="breadcrumb"><a href="advanced-dashboard.html">Overview</a><span class="sep">/</span><span class="crumb-active">Word Analysis</span></div></div>
+    <div class="topbar-right">
+      <div class="analysis-badge"><div class="dot"></div>Lexical Analysis</div>
+      <button class="btn btn-primary btn-sm" onclick="window.location='ai-assistant.html'"><i class="fa-solid fa-robot"></i> Ask AI</button>
+    </div>
+  </div>
+
+  <div class="page-body">
+    <div class="section-header mb-2">
+      <div class="title">Word-Level <span class="grad">Analysis</span></div>
+      <div class="subtitle">Token-by-token comparison, phrase detection, synonym mapping and framing analysis</div>
+    </div>
+
+    <!-- Tabs -->
+    <div style="display:flex;gap:.25rem;border-bottom:1px solid var(--border);margin-bottom:1.25rem">
+      <button class="tab-btn active" onclick="switchTab('wordlevel',this)">Word-by-Word</button>
+      <button class="tab-btn" onclick="switchTab('phrases',this)">Phrase Detection</button>
+      <button class="tab-btn" onclick="switchTab('framing',this)">Word Framing</button>
+      <button class="tab-btn" onclick="switchTab('frequency',this)">Word Frequency</button>
+      <button class="tab-btn" onclick="switchTab('search',this)">Advanced Search</button>
+    </div>
+
+    <!-- Word by Word -->
+    <div id="tab-wordlevel" class="tab-pane active">
+      <div class="panel" style="margin-bottom:0;border-radius:var(--r-lg) var(--r-lg) 0 0">
+        <div class="legend-row">
+          <div class="legend-item"><div class="legend-swatch" style="background:var(--danger)"></div><span style="color:var(--text-secondary)">Exact Word Match</span></div>
+          <div class="legend-item"><div class="legend-swatch" style="background:var(--accent)"></div><span style="color:var(--text-secondary)">Copied Phrase</span></div>
+          <div class="legend-item"><div class="legend-swatch" style="background:var(--warning)"></div><span style="color:var(--text-secondary)">Replaced Word</span></div>
+          <div class="legend-item"><div class="legend-swatch" style="background:var(--primary);border-style:dashed"></div><span style="color:var(--text-secondary)">Synonym</span></div>
+          <div class="legend-item"><div class="legend-swatch" style="background:var(--success)"></div><span style="color:var(--text-secondary)">Added</span></div>
+          <div class="legend-item"><div class="legend-swatch" style="background:rgba(255,255,255,.2)"></div><span style="color:var(--text-secondary)">Stopword (low weight)</span></div>
+        </div>
+      </div>
+      <div style="background:var(--bg-card);border:1px solid var(--border);border-top:none;border-radius:0 0 var(--r-lg) var(--r-lg);padding:1.25rem">
+        <div id="wordLevelContent"></div>
+      </div>
+    </div>
+
+    <!-- Phrase Detection -->
+    <div id="tab-phrases" class="tab-pane">
+      <div class="grid-2" style="gap:1rem;align-items:start">
+        <div class="panel">
+          <div class="panel-header"><div class="panel-title">🔍 Detected Copied Phrases</div><span id="phraseTotal" style="font-size:.78rem;color:var(--text-muted)"></span></div>
+          <div class="panel-body" id="phraseDetectionList"></div>
+        </div>
+        <div class="panel">
+          <div class="panel-header"><div class="panel-title">📊 Phrase Overlap by Sentence</div></div>
+          <div class="panel-body" id="phraseOverlapBars"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Word Framing -->
+    <div id="tab-framing" class="tab-pane">
+      <div style="display:flex;flex-direction:column;gap:1rem" id="framingList"></div>
+    </div>
+
+    <!-- Word Frequency -->
+    <div id="tab-frequency" class="tab-pane">
+      <div class="grid-2" style="gap:1rem;align-items:start">
+        <div class="panel">
+          <div class="panel-header"><div class="panel-title">📈 Student — Top Content Words</div></div>
+          <div class="panel-body" id="freqStudent"></div>
+        </div>
+        <div class="panel">
+          <div class="panel-header"><div class="panel-title">📚 Reference — Top Content Words</div></div>
+          <div class="panel-body" id="freqReference"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Advanced Search -->
+    <div id="tab-search" class="tab-pane">
+      <div class="panel">
+        <div class="panel-header"><div class="panel-title">🔎 Advanced Search</div></div>
+        <div class="panel-body">
+          <div style="display:flex;gap:.75rem;margin-bottom:1.25rem;flex-wrap:wrap">
+            <div class="search-bar" style="flex:1;min-width:240px">
+              <i class="fa-solid fa-magnifying-glass search-icon"></i>
+              <input type="text" id="searchInput" placeholder="Search word, phrase, or sentence…" onkeydown="if(event.key==='Enter') doSearch()"/>
+            </div>
+            <select class="filter-select" id="searchScope">
+              <option value="both">Both Documents</option>
+              <option value="student">Student Only</option>
+              <option value="reference">Reference Only</option>
+            </select>
+            <button class="btn btn-primary" onclick="doSearch()"><i class="fa-solid fa-magnifying-glass"></i> Search</button>
+          </div>
+          <div id="searchResults"></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+</div>
+
+<button class="float-chat-btn" id="floatChatBtn">🤖<span class="notif">!</span></button>
+<div class="float-chat-panel" id="floatChatPanel">
+  <div class="chat-container">
+    <div class="chat-header"><div class="chat-avatar">🤖</div><div><div class="chat-name">PlagiGuard AI</div><div class="chat-status"><div style="width:6px;height:6px;border-radius:50%;background:var(--accent)"></div>Online</div></div></div>
+    <div class="chat-messages" id="floatMessages"></div>
+    <div class="chat-prompts"><span class="prompt-chip">[Find paraphrases]</span><span class="prompt-chip">[Exact matches]</span></div>
+    <div class="chat-input-row"><textarea class="chat-input" rows="1" placeholder="Ask about word analysis…"></textarea><button class="btn btn-primary chat-send-btn" style="padding:.55rem .8rem"><i class="fa-solid fa-paper-plane"></i></button></div>
+  </div>
+</div>
+<div class="toast-container" id="toastContainer"></div>
+<script src="js/engine.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded',()=>{
+  initAdvNav(); initFloatingChat();
+  buildWordLevel();
+  buildPhraseDetection();
+  buildFraming();
+  buildFrequency();
+});
+
+function switchTab(name,btn){
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.tab-pane').forEach(p=>p.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('tab-'+name).classList.add('active');
+}
+
+function buildWordLevel(){
+  const container=document.getElementById('wordLevelContent');
+  const highMatches=MOCK_DATA.matches.filter(m=>m.score>65).slice(0,8);
+  container.innerHTML=highMatches.map(m=>{
+    const s=MOCK_DATA.student.sentences.find(x=>x.id===m.studentId);
+    const r=MOCK_DATA.reference.sentences.find(x=>x.id===m.refId);
+    if(!s||!r) return '';
+    const diffHtml=buildWordDiff(s.text,r.text);
+    const phrases=detectPhrases(s.text,r.text);
+    return `<div style="margin-bottom:1.5rem;padding-bottom:1.5rem;border-bottom:1px solid rgba(255,255,255,.06)">
+      <div style="display:flex;align-items:center;gap:.75rem;margin-bottom:.75rem;flex-wrap:wrap">
+        ${matchChip(m.type)}
+        <span style="font-size:.82rem;color:var(--text-muted)">${s.section}</span>
+        <span style="margin-left:auto;font-family:'Sora',sans-serif;font-weight:800;color:${scoreColor(m.score)}">${m.score}%</span>
+      </div>
+      <div style="font-size:.68rem;font-weight:700;text-transform:uppercase;color:var(--text-muted);margin-bottom:.35rem">Reference (original)</div>
+      <div class="word-diff-wrap" style="background:var(--bg-card2);padding:.85rem;border-radius:var(--r-sm);margin-bottom:.65rem;border-left:3px solid var(--warning)">${r.text}</div>
+      <div style="font-size:.68rem;font-weight:700;text-transform:uppercase;color:var(--text-muted);margin-bottom:.35rem">Student (annotated)</div>
+      <div class="word-diff-wrap" style="background:var(--bg-card3);padding:.85rem;border-radius:var(--r-sm);border-left:3px solid var(--danger)">${diffHtml}</div>
+      ${phrases.length?`<div style="margin-top:.6rem;font-size:.78rem;padding:.5rem .75rem;background:rgba(0,217,181,.07);border-radius:var(--r-xs);color:var(--accent)">
+        <i class="fa-solid fa-highlighter"></i> <strong>${phrases.length}</strong> matching phrase${phrases.length!==1?'s':''}: ${phrases.slice(0,3).map(p=>`"${p.phrase}"`).join(' · ')}
+      </div>`:''}
+      <div style="display:flex;gap:1rem;margin-top:.65rem;font-size:.78rem;flex-wrap:wrap">
+        <span>Exact words: <strong style="color:var(--danger)">${m.exactOverlap}%</strong></span>
+        <span>Phrase overlap: <strong style="color:var(--accent)">${m.phraseOverlap}%</strong></span>
+        <span>Synonyms detected: <strong style="color:var(--primary)">${Object.keys(SYNONYMS).filter(k=>tokenize(s.text).includes(k)||tokenize(s.text).includes(SYNONYMS[k])).length}</strong></span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function buildPhraseDetection(){
+  const all=[];
+  MOCK_DATA.matches.forEach(m=>{
+    const s=MOCK_DATA.student.sentences.find(x=>x.id===m.studentId);
+    const r=MOCK_DATA.reference.sentences.find(x=>x.id===m.refId);
+    if(!s||!r) return;
+    detectPhrases(s.text,r.text).forEach(p=>all.push({...p,match:m,student:s,ref:r}));
+  });
+  document.getElementById('phraseTotal').textContent=all.length+' phrases found';
+  document.getElementById('phraseDetectionList').innerHTML=all.length
+    ? all.map(p=>`<div class="phrase-card">
+        <div class="flex-between mb-1">
+          <div style="font-family:'JetBrains Mono',monospace;color:var(--accent);font-size:.82rem">"${p.phrase}"</div>
+          <div style="display:flex;gap:.4rem">${matchChip(p.match.type)}<span style="font-size:.72rem;color:var(--text-muted)">${p.length}w</span></div>
+        </div>
+        <div style="font-size:.75rem;color:var(--text-muted)">
+          Section: <strong style="color:var(--text-primary)">${p.student.section}</strong> &nbsp;|&nbsp;
+          Phrase overlap: <strong style="color:var(--accent)">${phraseOverlapPct(p.student.text,p.ref.text)}%</strong> &nbsp;|&nbsp;
+          Original: <em>"${p.ref.text.substring(0,50)}…"</em>
+        </div>
+      </div>`).join('')
+    : '<div class="empty-state"><div class="empty-icon">✅</div><div class="empty-title">No significant phrases</div></div>';
+
+  document.getElementById('phraseOverlapBars').innerHTML=MOCK_DATA.matches.map(m=>{
+    const s=MOCK_DATA.student.sentences.find(x=>x.id===m.studentId);
+    const r=MOCK_DATA.reference.sentences.find(x=>x.id===m.refId);
+    if(!s||!r) return '';
+    const pct=phraseOverlapPct(s.text,r.text);
+    return `<div style="margin-bottom:.75rem">
+      <div class="flex-between" style="font-size:.78rem;margin-bottom:.3rem">
+        <span style="color:var(--text-secondary)">${s.text.substring(0,42)}…</span>
+        <span style="font-weight:800;color:var(--accent)">${pct}%</span>
+      </div>
+      <div style="height:6px;background:rgba(255,255,255,.05);border-radius:3px;overflow:hidden">
+        <div style="height:100%;background:var(--accent);width:${pct}%;transition:width 1s ease"></div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function buildFraming(){
+  const high=MOCK_DATA.matches.filter(m=>m.paraphraseConf>75).slice(0,5);
+  document.getElementById('framingList').innerHTML=high.map(m=>{
+    const s=MOCK_DATA.student.sentences.find(x=>x.id===m.studentId);
+    const r=MOCK_DATA.reference.sentences.find(x=>x.id===m.refId);
+    if(!s||!r) return '';
+    const changes=analyzeTransformation(s.text,r.text);
+    const synChanges=changes.filter(c=>c.type==='synonym');
+    const added=changes.filter(c=>c.type==='added');
+    const removed=changes.filter(c=>c.type==='removed');
+    return `<div class="panel" style="margin:0">
+      <div class="panel-header">
+        <div class="panel-title">🖊️ Word Framing — ${s.section}</div>
+        <span style="font-size:.78rem;color:var(--text-muted)">Paraphrase confidence: <strong style="color:var(--accent)">${m.paraphraseConf}%</strong></span>
+      </div>
+      <div class="panel-body">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem">
+          <div><div style="font-size:.68rem;font-weight:700;text-transform:uppercase;color:var(--text-muted);margin-bottom:.35rem">Original</div>
+            <div style="background:var(--bg-card2);border-left:3px solid var(--warning);padding:.75rem;border-radius:var(--r-xs);font-size:.83rem;font-style:italic;color:var(--text-secondary)">"${r.text}"</div></div>
+          <div><div style="font-size:.68rem;font-weight:700;text-transform:uppercase;color:var(--text-muted);margin-bottom:.35rem">Student</div>
+            <div style="background:var(--bg-card2);border-left:3px solid var(--danger);padding:.75rem;border-radius:var(--r-xs);font-size:.83rem;font-style:italic;color:var(--text-secondary)">"${s.text}"</div></div>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:.75rem;margin-bottom:1rem">
+          <div style="background:var(--bg-card3);border-radius:var(--r-sm);padding:.75rem;text-align:center">
+            <div style="font-size:1.2rem;font-weight:800;color:var(--warning)">${synChanges.length}</div>
+            <div style="font-size:.7rem;color:var(--text-muted)">Synonyms</div>
+          </div>
+          <div style="background:var(--bg-card3);border-radius:var(--r-sm);padding:.75rem;text-align:center">
+            <div style="font-size:1.2rem;font-weight:800;color:var(--success)">${added.length}</div>
+            <div style="font-size:.7rem;color:var(--text-muted)">Words Added</div>
+          </div>
+          <div style="background:var(--bg-card3);border-radius:var(--r-sm);padding:.75rem;text-align:center">
+            <div style="font-size:1.2rem;font-weight:800;color:var(--danger)">${removed.length}</div>
+            <div style="font-size:.7rem;color:var(--text-muted)">Words Removed</div>
+          </div>
+        </div>
+        ${synChanges.length?`<div style="margin-bottom:.85rem">
+          <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;color:var(--text-muted);margin-bottom:.4rem">Synonym Substitutions</div>
+          <div style="display:flex;flex-wrap:wrap;gap:.4rem">
+            ${synChanges.map(c=>`<div style="background:var(--bg-card2);border:1px solid var(--border);border-radius:var(--r-sm);padding:.3rem .65rem;font-size:.78rem;display:flex;align-items:center;gap:.4rem">
+              <span style="color:var(--danger)">${c.from}</span>
+              <i class="fa-solid fa-arrow-right" style="font-size:.65rem;color:var(--text-muted)"></i>
+              <span style="color:var(--success)">${c.to}</span>
+              <span style="font-size:.65rem;color:var(--text-muted);padding:.05rem .35rem;background:var(--bg-card3);border-radius:8px">synonym</span>
+            </div>`).join('')}
+          </div>
+        </div>`:''}
+        <div class="ai-explanation">
+          <div class="ai-tag"><i class="fa-solid fa-robot"></i> AI Framing Analysis</div>
+          Meaning preserved through ${synChanges.length?'synonym replacement':''}${synChanges.length&&(added.length||removed.length)?', ':''}${added.length?'additional modifiers':''}${removed.length?'content removal':''}. Semantic similarity: ${m.semanticSim}%. Structural similarity: ${m.structuralSim}%.
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function buildFrequency(){
+  const countWords=(sentences)=>{
+    const freq={};
+    sentences.forEach(s=>tokenize(s.text).forEach(w=>{
+      if(!isStopword(w)&&w.length>3){ freq[w]=(freq[w]||0)+1; }
+    }));
+    return Object.entries(freq).sort((a,b)=>b[1]-a[1]).slice(0,15);
+  };
+  const stu=countWords(MOCK_DATA.student.sentences);
+  const ref=countWords(MOCK_DATA.reference.sentences);
+  const max=Math.max(...stu.map(x=>x[1]),...ref.map(x=>x[1]));
+  const render=(words,el)=>{
+    el.innerHTML=words.map(([w,c])=>{
+      const pct=Math.round((c/max)*100);
+      const inBoth=stu.find(x=>x[0]===w)&&ref.find(x=>x[0]===w);
+      return `<div style="margin-bottom:.55rem">
+        <div class="flex-between" style="font-size:.78rem;margin-bottom:.25rem">
+          <span style="font-family:'JetBrains Mono',monospace;color:${inBoth?'var(--warning)':'var(--text-secondary)'}">${w}</span>
+          <span style="font-weight:700">${c}×</span>
+        </div>
+        <div class="freq-bar">
+          <div class="freq-fill" style="width:${pct}%;background:${inBoth?'var(--warning)':'var(--primary)'}65">${inBoth?'⚠️ shared':''}</div>
+        </div>
+      </div>`;
+    }).join('');
+  };
+  render(stu,document.getElementById('freqStudent'));
+  render(ref,document.getElementById('freqReference'));
+}
+
+function doSearch(){
+  const q=(document.getElementById('searchInput').value||'').trim();
+  const scope=document.getElementById('searchScope').value;
+  const results=document.getElementById('searchResults');
+  if(!q){ results.innerHTML='<div class="empty-state"><div class="empty-icon">🔍</div><div class="empty-title">Enter a search term</div></div>'; return; }
+  const qLower = q.toLowerCase();
+  // Escape regex special chars to prevent ReDoS
+  const qEscaped = q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+  let safeRe;
+  try { safeRe = new RegExp(`(${qEscaped})`, 'gi'); } catch(e) { safeRe = null; }
+  const hits=[];
+  if(scope!=='reference') MOCK_DATA.student.sentences.forEach(s=>{ if(s.text.toLowerCase().includes(qLower)) hits.push({...s,doc:'Student'}); });
+  if(scope!=='student')   MOCK_DATA.reference.sentences.forEach(s=>{ if(s.text.toLowerCase().includes(qLower)) hits.push({...s,doc:'Reference'}); });
+  results.innerHTML=hits.length
+    ? `<div style="font-size:.82rem;color:var(--text-muted);margin-bottom:.85rem">${hits.length} result${hits.length!==1?'s':''} for "<strong style="color:var(--text-primary)">${escHtml(q)}</strong>"</div>`
+      + hits.map(h=>{
+          const hi = safeRe
+            ? h.text.replace(safeRe,'<mark style="background:rgba(255,181,71,.35);color:var(--text-primary);border-radius:2px;padding:0 2px">$1</mark>')
+            : escHtml(h.text);
+          const m=MOCK_DATA.matches.find(x=>x.studentId===h.id||x.refId===h.id);
+          return `<div style="background:var(--bg-card2);border:1px solid var(--border);border-radius:var(--r-md);padding:.85rem 1rem;margin-bottom:.6rem">
+            <div class="flex-between mb-1">
+              <span style="font-size:.72rem;font-weight:700;color:${h.doc==='Student'?'var(--danger)':'var(--warning)'}">${h.doc} — ${h.section}</span>
+              ${m?matchChip(m.type):'<span class="match-chip chip-original">ORIGINAL</span>'}
+            </div>
+            <div style="font-size:.85rem;line-height:1.7">${hi}</div>
+          </div>`;
+        }).join('')
+    : `<div class="empty-state"><div class="empty-icon">🔍</div><div class="empty-title">No results for "${escHtml(q)}"</div></div>`;
+}
+</script>
+</body>
+</html>

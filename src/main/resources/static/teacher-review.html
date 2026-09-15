@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Teacher Review — PlagiaCheck</title>
+<link rel="stylesheet" href="css/advanced.css"/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+<style>
+.review-layout{display:grid;grid-template-columns:1fr 320px;gap:1.25rem}
+.comment-box{background:var(--bg-input);border:1px solid var(--border);border-radius:var(--r-sm);padding:.6rem .85rem;color:var(--text-primary);font-size:.82rem;resize:vertical;min-height:60px;outline:none;width:100%;transition:var(--t-base)}
+.comment-box:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(108,99,255,.1)}
+.decision-row{display:flex;gap:.5rem;flex-wrap:wrap;margin-top:.65rem}
+.review-status-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+</style>
+</head>
+<body>
+<div class="app-shell">
+<aside class="adv-sidebar">
+  <div class="sidebar-brand"><div class="brand-logo">P</div><div><div class="brand-text">PlagiaCheck</div><div class="brand-sub">Academic Integrity AI</div></div></div>
+  <div class="nav-section">
+    <div class="nav-section-label">Analysis</div>
+    <a href="advanced-dashboard.html" class="nav-item"><span class="nav-icon"><i class="fa-solid fa-gauge-high"></i></span><span>Overview</span></a>
+    <a href="comparison.html" class="nav-item"><span class="nav-icon"><i class="fa-solid fa-code-compare"></i></span><span>Document Comparison</span></a>
+    <a href="word-analysis.html" class="nav-item"><span class="nav-icon"><i class="fa-solid fa-spell-check"></i></span><span>Word Analysis</span></a>
+    <a href="visualization.html" class="nav-item"><span class="nav-icon"><i class="fa-solid fa-cube"></i></span><span>3D Visualization</span></a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-label">Intelligence</div>
+    <a href="ai-assistant.html" class="nav-item"><span class="nav-icon"><i class="fa-solid fa-robot"></i></span><span>AI Assistant</span></a>
+    <a href="teacher-review.html" class="nav-item active"><span class="nav-icon"><i class="fa-solid fa-user-check"></i></span><span>Teacher Review</span></a>
+    <a href="report.html" class="nav-item"><span class="nav-icon"><i class="fa-solid fa-file-lines"></i></span><span>Reports</span></a>
+  </div>
+  <div class="nav-section">
+    <a href="advanced-dashboard.html" class="nav-item"><span class="nav-icon"><i class="fa-solid fa-arrow-left"></i></span><span>Back</span></a>
+    <a href="#" class="nav-item logout-btn"><span class="nav-icon"><i class="fa-solid fa-right-from-bracket"></i></span><span>Logout</span></a>
+  </div>
+  <div class="sidebar-bottom"><div class="ai-status"><div class="ai-pulse"></div><div><div style="font-size:.8rem;font-weight:600">PlagiGuard AI</div><div style="font-size:.68rem;color:var(--text-muted)">Active</div></div></div></div>
+</aside>
+
+<div class="page-content">
+  <div class="adv-topbar">
+    <div class="topbar-left"><div class="breadcrumb"><a href="advanced-dashboard.html">Overview</a><span class="sep">/</span><span class="crumb-active">Teacher Review</span></div></div>
+    <div class="topbar-right">
+      <span style="font-size:.82rem;color:var(--text-muted)">Reviewed: <strong id="reviewedCount" style="color:var(--text-primary)">0</strong> / <strong id="totalCount">12</strong></span>
+      <button class="btn btn-accent btn-sm" onclick="exportDecisions()"><i class="fa-solid fa-file-export"></i> Export Decisions</button>
+      <button class="btn btn-primary btn-sm" onclick="window.location='report.html'"><i class="fa-solid fa-file-lines"></i> Generate Report</button>
+    </div>
+  </div>
+
+  <div class="page-body">
+    <div class="section-header mb-2">
+      <div class="title">Teacher <span class="grad">Review Mode</span></div>
+      <div class="subtitle">Review each flagged match and record your academic integrity decision. AI decisions are preserved separately.</div>
+    </div>
+
+    <div class="review-layout">
+      <!-- Review cards -->
+      <div>
+        <!-- Filter bar -->
+        <div class="filters-bar" style="border:1px solid var(--border);border-radius:var(--r-md);margin-bottom:1rem">
+          <span class="filter-chip active" onclick="filterReview('all',this)">All</span>
+          <span class="filter-chip" onclick="filterReview('pending',this)">Pending</span>
+          <span class="filter-chip" onclick="filterReview('confirmed',this)">Confirmed</span>
+          <span class="filter-chip" onclick="filterReview('dismissed',this)">Not Plagiarism</span>
+          <span class="filter-chip" onclick="filterReview('needs-review',this)">Needs Review</span>
+          <div style="margin-left:auto">
+            <select class="filter-select" onchange="filterReviewType(this.value)">
+              <option value="">All Types</option><option>EXACT</option><option>SEMANTIC</option><option>PARAPHRASE</option>
+            </select>
+          </div>
+        </div>
+
+        <div id="reviewCards"></div>
+      </div>
+
+      <!-- Stats panel -->
+      <div style="display:flex;flex-direction:column;gap:1rem">
+        <!-- Summary -->
+        <div class="panel">
+          <div class="panel-header"><div class="panel-title">📊 Review Progress</div></div>
+          <div class="panel-body">
+            <div class="admin-stat-row" style="grid-template-columns:1fr 1fr">
+              <div class="admin-stat"><div class="admin-stat-val" style="color:var(--danger)" id="statConfirmed">0</div><div class="admin-stat-lbl">Confirmed</div></div>
+              <div class="admin-stat"><div class="admin-stat-val" style="color:var(--success)" id="statDismissed">0</div><div class="admin-stat-lbl">Dismissed</div></div>
+              <div class="admin-stat"><div class="admin-stat-val" style="color:var(--warning)" id="statNeedsReview">0</div><div class="admin-stat-lbl">Needs Review</div></div>
+              <div class="admin-stat"><div class="admin-stat-val" style="color:var(--text-muted)" id="statPending">12</div><div class="admin-stat-lbl">Pending</div></div>
+            </div>
+            <div style="margin-top:1rem">
+              <div class="flex-between" style="font-size:.8rem;margin-bottom:.4rem">
+                <span style="color:var(--text-secondary)">Review Progress</span>
+                <span style="font-weight:700" id="progressPct">0%</span>
+              </div>
+              <div style="height:8px;background:rgba(255,255,255,.06);border-radius:4px;overflow:hidden">
+                <div id="progressBar" style="height:100%;background:linear-gradient(90deg,var(--primary),var(--accent));width:0%;transition:width .5s ease;border-radius:4px"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- AI vs Teacher -->
+        <div class="panel">
+          <div class="panel-header"><div class="panel-title">🤖 AI Decision Log</div></div>
+          <div class="panel-body">
+            <div style="font-size:.78rem;color:var(--text-muted);margin-bottom:.75rem">AI decisions are never overwritten. Teacher decisions are recorded separately.</div>
+            <div id="aiDecisionLog" style="display:flex;flex-direction:column;gap:.4rem"></div>
+          </div>
+        </div>
+
+        <!-- Feedback Loop -->
+        <div class="panel">
+          <div class="panel-header"><div class="panel-title">🔄 Feedback Loop</div></div>
+          <div class="panel-body">
+            <div style="font-size:.78rem;color:var(--text-secondary);margin-bottom:.75rem">When you dismiss AI detections, this data improves future analysis thresholds.</div>
+            <div class="admin-stat-row" style="grid-template-columns:1fr 1fr">
+              <div class="admin-stat"><div class="admin-stat-val" style="color:var(--warning)" id="fbFP">0</div><div class="admin-stat-lbl">False Positives</div></div>
+              <div class="admin-stat"><div class="admin-stat-val" style="color:var(--success)" id="fbConfirmed">0</div><div class="admin-stat-lbl">Confirmed</div></div>
+            </div>
+            <div style="margin-top:.75rem;padding:.65rem;background:rgba(0,217,181,.07);border:1px solid rgba(0,217,181,.2);border-radius:var(--r-sm);font-size:.75rem;color:var(--accent)">
+              <i class="fa-solid fa-circle-info"></i> Performance metrics are computed from labeled evaluation data only — not estimated.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+<div class="toast-container" id="toastContainer"></div>
+<script src="js/engine.js"></script>
+<script>
+const decisions = {};   // matchId -> {status, comment}
+let currentFilter = 'all';
+let currentTypeFilter = '';
+
+document.addEventListener('DOMContentLoaded',()=>{
+  initAdvNav();
+  document.getElementById('totalCount').textContent = MOCK_DATA.matches.length;
+  document.getElementById('statPending').textContent = MOCK_DATA.matches.length;
+  renderReviewCards();
+  renderAILog();
+});
+
+function renderReviewCards(){
+  const container = document.getElementById('reviewCards');
+  let filtered = MOCK_DATA.matches.filter(m=>{
+    const d = decisions[m.id];
+    const status = d?.status||'pending';
+    if(currentFilter!=='all' && status!==currentFilter) return false;
+    if(currentTypeFilter && m.type!==currentTypeFilter) return false;
+    return true;
+  });
+  if(!filtered.length){
+    container.innerHTML=`<div class="empty-state"><div class="empty-icon">✅</div><div class="empty-title">No matches in this filter</div></div>`;
+    return;
+  }
+  container.innerHTML = filtered.map(m=>{
+    const s   = MOCK_DATA.student.sentences.find(x=>x.id===m.studentId);
+    const r   = MOCK_DATA.reference.sentences.find(x=>x.id===m.refId);
+    const d   = decisions[m.id];
+    const status = d?.status||'pending';
+    const statusClass = status==='pending'?'':status;
+    return `<div class="review-card ${statusClass}" id="rc_${m.id}">
+      <div class="review-header">
+        <div class="review-status-dot" style="background:${statusDotColor(status)}"></div>
+        ${matchChip(m.type)}
+        <span style="font-size:.82rem;color:var(--text-muted)">${s?.section}</span>
+        <div style="margin-left:auto;display:flex;align-items:center;gap:.6rem">
+          <span style="font-family:'Sora',sans-serif;font-size:1rem;font-weight:800;color:${scoreColor(m.score)}">${m.score}%</span>
+          ${d?`<span class="review-decision decision-${status}"><i class="fa-solid ${statusIcon(status)}"></i> ${statusLabel(status)}</span>`:'<span style="font-size:.72rem;color:var(--text-muted)">Pending</span>'}
+        </div>
+      </div>
+      <div class="review-body">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-bottom:.85rem">
+          <div>
+            <div style="font-size:.68rem;font-weight:700;text-transform:uppercase;color:var(--text-muted);margin-bottom:.35rem">Student Text</div>
+            <div class="review-text-block" style="border-left-color:var(--danger)">${s?.text||'—'}</div>
+          </div>
+          <div>
+            <div style="font-size:.68rem;font-weight:700;text-transform:uppercase;color:var(--text-muted);margin-bottom:.35rem">Reference Text</div>
+            <div class="review-text-block" style="border-left-color:var(--warning)">${r?.text||'—'}</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:1rem;flex-wrap:wrap;font-size:.8rem;margin-bottom:.85rem">
+          <span>Exact: <strong style="color:var(--danger)">${m.exactOverlap}%</strong></span>
+          <span>Semantic: <strong style="color:var(--primary)">${m.semanticSim}%</strong></span>
+          <span>Paraphrase: <strong style="color:var(--accent)">${m.paraphraseConf}%</strong></span>
+          <span>Evidence: <strong style="color:${m.evidenceStrength==='HIGH'?'var(--danger)':'var(--warning)'}">${m.evidenceStrength}</strong></span>
+          <span>Citation: <strong style="color:${m.citation?'var(--success)':'var(--danger)'}">${m.citation?'Found':'Missing'}</strong></span>
+        </div>
+        <div class="ai-explanation" style="margin-bottom:.85rem">
+          <div class="ai-tag"><i class="fa-solid fa-robot"></i> AI Assessment</div>
+          ${AI_EXPLANATIONS[m.type]?.(m)||'—'}
+        </div>
+        <div style="margin-bottom:.65rem">
+          <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;color:var(--text-muted);margin-bottom:.4rem">Teacher Comment</div>
+          <textarea class="comment-box" id="comment_${m.id}" placeholder="Add your notes or reasoning…">${d?.comment||''}</textarea>
+        </div>
+        <div class="decision-row">
+          <button class="btn btn-danger btn-sm" onclick="setDecision('${m.id}','confirmed')"><i class="fa-solid fa-triangle-exclamation"></i> Confirm Match</button>
+          <button class="btn btn-success btn-sm" onclick="setDecision('${m.id}','dismissed')"><i class="fa-solid fa-check"></i> Not Plagiarism</button>
+          <button class="btn btn-warning btn-sm" onclick="setDecision('${m.id}','needs-review')"><i class="fa-solid fa-clock"></i> Needs Review</button>
+          <button class="btn btn-outline btn-sm" onclick="clearDecision('${m.id}')"><i class="fa-solid fa-rotate-left"></i> Reset</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function setDecision(matchId, status){
+  const comment = document.getElementById('comment_'+matchId)?.value||'';
+  decisions[matchId]={ status, comment, timestamp: new Date().toISOString() };
+  toast(status==='confirmed'?'Match confirmed as plagiarism':status==='dismissed'?'Marked as not plagiarism':'Flagged for further review', status==='dismissed'?'success':status==='confirmed'?'error':'info');
+  updateStats();
+  renderReviewCards();
+  renderAILog();
+}
+function clearDecision(matchId){ delete decisions[matchId]; updateStats(); renderReviewCards(); }
+
+function updateStats(){
+  const counts = { confirmed:0, dismissed:0, 'needs-review':0 };
+  Object.values(decisions).forEach(d=>{ if(d.status in counts) counts[d.status]++; });
+  const reviewed = Object.keys(decisions).length;
+  const total    = MOCK_DATA.matches.length;
+  document.getElementById('statConfirmed').textContent   = counts.confirmed;
+  document.getElementById('statDismissed').textContent   = counts.dismissed;
+  document.getElementById('statNeedsReview').textContent = counts['needs-review'];
+  document.getElementById('statPending').textContent     = total-reviewed;
+  document.getElementById('reviewedCount').textContent   = reviewed;
+  const pct = Math.round((reviewed/total)*100);
+  document.getElementById('progressPct').textContent = pct+'%';
+  document.getElementById('progressBar').style.width = pct+'%';
+  document.getElementById('fbFP').textContent      = counts.dismissed;
+  document.getElementById('fbConfirmed').textContent = counts.confirmed;
+}
+
+function renderAILog(){
+  const log = document.getElementById('aiDecisionLog');
+  const recent = MOCK_DATA.matches.slice(0,4);
+  log.innerHTML = recent.map(m=>{
+    const d = decisions[m.id];
+    return `<div style="display:flex;align-items:center;justify-content:space-between;padding:.4rem 0;border-bottom:1px solid rgba(255,255,255,.04);font-size:.78rem">
+      <span style="color:var(--text-muted)">${m.type} ${m.score}%</span>
+      <div style="display:flex;gap:.4rem;align-items:center">
+        <span style="color:var(--primary);font-size:.7rem">AI: Potential Match</span>
+        ${d?`<span class="review-decision decision-${d.status}" style="font-size:.62rem;padding:.1rem .4rem">Teacher: ${statusLabel(d.status)}</span>`:''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function filterReview(filter, el){
+  currentFilter=filter;
+  document.querySelectorAll('.filter-chip').forEach(c=>c.classList.remove('active'));
+  el.classList.add('active');
+  renderReviewCards();
+}
+function filterReviewType(type){ currentTypeFilter=type; renderReviewCards(); }
+
+function statusDotColor(status){
+  const m={'confirmed':'var(--danger)','dismissed':'var(--success)','needs-review':'var(--warning)','pending':'var(--text-muted)'};
+  return m[status]||'var(--text-muted)';
+}
+function statusIcon(status){
+  const m={'confirmed':'fa-triangle-exclamation','dismissed':'fa-check','needs-review':'fa-clock','pending':'fa-hourglass-half'};
+  return m[status]||'fa-question';
+}
+function statusLabel(status){
+  const m={'confirmed':'Confirmed','dismissed':'Not Plagiarism','needs-review':'Needs Review','pending':'Pending'};
+  return m[status]||status;
+}
+
+function exportDecisions(){
+  const data=MOCK_DATA.matches.map(m=>({
+    matchId:m.id, type:m.type, score:m.score, section:MOCK_DATA.student.sentences.find(x=>x.id===m.studentId)?.section,
+    aiDecision:'Potential Match', teacherDecision:decisions[m.id]?.status||'pending',
+    comment:decisions[m.id]?.comment||'', timestamp:decisions[m.id]?.timestamp||null
+  }));
+  const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a'); a.href=url; a.download='teacher_decisions.json'; a.click();
+  URL.revokeObjectURL(url);
+  toast('Decisions exported as JSON','success');
+}
+</script>
+</body>
+</html>

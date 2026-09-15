@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Sign In — PlagiaCheck</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Sora:wght@700;800&display=swap');
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'Inter',sans-serif;background:#0A0C18;color:#EEF0FF;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:1rem;overflow:hidden}
+    .bg{position:fixed;inset:0;z-index:0}
+    .blob{position:absolute;border-radius:50%;filter:blur(120px);opacity:.12}
+    .b1{width:600px;height:600px;background:#6C63FF;top:-200px;left:-150px}
+    .b2{width:500px;height:500px;background:#00D9B5;bottom:-150px;right:-100px}
+    .grid{position:absolute;inset:0;background-image:linear-gradient(rgba(108,99,255,.04)1px,transparent 1px),linear-gradient(90deg,rgba(108,99,255,.04)1px,transparent 1px);background-size:50px 50px}
+    .card{position:relative;z-index:1;background:#111326;border:1px solid rgba(255,255,255,.08);border-radius:24px;padding:2.5rem;width:100%;max-width:420px;box-shadow:0 20px 60px rgba(0,0,0,.5)}
+    .logo{display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:2rem}
+    .logo-icon{width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,#6C63FF,#00D9B5);display:flex;align-items:center;justify-content:center;font-family:'Sora',sans-serif;font-weight:800;font-size:1.1rem;color:#fff;box-shadow:0 4px 20px rgba(108,99,255,.4)}
+    .logo-name{font-family:'Sora',sans-serif;font-size:1.3rem;font-weight:800}
+    .title{font-family:'Sora',sans-serif;font-size:1.5rem;font-weight:800;text-align:center;margin-bottom:.4rem}
+    .subtitle{font-size:.87rem;color:#8B90B8;text-align:center;margin-bottom:2rem}
+    .alert{display:none;padding:.85rem 1rem;border-radius:10px;font-size:.85rem;margin-bottom:1rem;background:rgba(255,77,109,.1);border:1px solid rgba(255,77,109,.3);color:#ff6b87;align-items:center;gap:.6rem}
+    .group{margin-bottom:1.1rem}
+    label{display:block;font-size:.82rem;font-weight:600;color:#8B90B8;margin-bottom:.45rem}
+    .input-wrap{position:relative}
+    .input-icon{position:absolute;left:1rem;top:50%;transform:translateY(-50%);color:#4A4F6A;font-size:.9rem;pointer-events:none}
+    input{width:100%;background:#161828;border:1px solid rgba(255,255,255,.07);border-radius:10px;padding:.72rem 1rem .72rem 2.75rem;color:#EEF0FF;font-size:.9rem;font-family:'Inter',sans-serif;outline:none;transition:all .2s}
+    input:focus{border-color:#6C63FF;box-shadow:0 0 0 3px rgba(108,99,255,.12)}
+    input::placeholder{color:#4A4F6A}
+    .eye-btn{position:absolute;right:1rem;top:50%;transform:translateY(-50%);background:none;border:none;color:#4A4F6A;cursor:pointer;font-size:.9rem;transition:color .2s}
+    .eye-btn:hover{color:#6C63FF}
+    .err{font-size:.75rem;color:#FF4D6D;margin-top:.3rem;display:none}
+    .btn{width:100%;padding:.75rem;border:none;border-radius:10px;font-size:.95rem;font-weight:700;font-family:'Inter',sans-serif;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:all .25s;margin-top:.5rem}
+    .btn-primary{background:linear-gradient(135deg,#6C63FF,#5548e0);color:#fff;box-shadow:0 4px 20px rgba(108,99,255,.35)}
+    .btn-primary:hover{transform:translateY(-1px);box-shadow:0 8px 28px rgba(108,99,255,.45)}
+    .btn-primary:disabled{opacity:.5;cursor:not-allowed;transform:none}
+    .spinner{width:18px;height:18px;border-radius:50%;border:2px solid rgba(255,255,255,.25);border-top-color:#fff;animation:spin .7s linear infinite}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    .footer{text-align:center;font-size:.84rem;color:#8B90B8;margin-top:1.5rem}
+    .footer a{color:#6C63FF;font-weight:600;text-decoration:none}
+    .footer a:hover{text-decoration:underline}
+    .divider{display:flex;align-items:center;gap:.75rem;margin:1.25rem 0;font-size:.78rem;color:#4A4F6A}
+    .divider::before,.divider::after{content:'';flex:1;height:1px;background:rgba(255,255,255,.07)}
+    .demo-btn{width:100%;padding:.65rem;border:1px solid rgba(255,255,255,.1);border-radius:10px;background:transparent;color:#8B90B8;font-size:.87rem;font-family:'Inter',sans-serif;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:all .2s}
+    .demo-btn:hover{border-color:#6C63FF;color:#6C63FF;background:rgba(108,99,255,.08)}
+    .toast-c{position:fixed;top:1.5rem;right:1.5rem;z-index:999;display:flex;flex-direction:column;gap:.5rem}
+    .toast{padding:.75rem 1.1rem;border-radius:10px;background:#111326;border:1px solid rgba(34,197,94,.4);color:#4ade80;font-size:.85rem;font-weight:500;box-shadow:0 8px 24px rgba(0,0,0,.4);animation:slideIn .3s ease}
+    @keyframes slideIn{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:translateX(0)}}
+  </style>
+</head>
+<body>
+<div class="bg">
+  <div class="blob b1"></div>
+  <div class="blob b2"></div>
+  <div class="grid"></div>
+</div>
+
+<div class="card">
+  <div class="logo">
+    <div class="logo-icon">P</div>
+    <span class="logo-name">PlagiaCheck</span>
+  </div>
+
+  <h1 class="title">Welcome back</h1>
+  <p class="subtitle">Sign in to access your plagiarism dashboard</p>
+
+  <div class="alert" id="errAlert"><i class="fa-solid fa-circle-exclamation"></i><span id="errMsg"></span></div>
+
+  <form id="loginForm" novalidate>
+    <div class="group">
+      <label for="username">Username</label>
+      <div class="input-wrap">
+        <i class="input-icon fa-regular fa-user"></i>
+        <input type="text" id="username" placeholder="Enter your username" autocomplete="username" required/>
+      </div>
+      <div class="err" id="usernameErr">Username is required</div>
+    </div>
+
+    <div class="group">
+      <label for="password">Password</label>
+      <div class="input-wrap">
+        <i class="input-icon fa-solid fa-lock"></i>
+        <input type="password" id="password" placeholder="Enter your password" autocomplete="current-password" required/>
+        <button type="button" class="eye-btn" id="eyeBtn"><i class="fa-regular fa-eye"></i></button>
+      </div>
+      <div class="err" id="passwordErr">Password is required</div>
+    </div>
+
+    <button type="submit" class="btn btn-primary" id="submitBtn">
+      <span id="btnLabel"><i class="fa-solid fa-arrow-right-to-bracket"></i> Sign In</span>
+      <span id="btnSpinner" style="display:none"><div class="spinner"></div> Signing in…</span>
+    </button>
+  </form>
+
+  <div class="divider">or</div>
+  <button class="demo-btn" onclick="fillDemo()">
+    <i class="fa-solid fa-flask"></i> Try Demo (no account needed)
+  </button>
+
+  <div class="footer">
+    Don't have an account? <a href="register.html">Create one free</a>
+  </div>
+  <div class="footer" style="margin-top:.5rem">
+    <a href="index.html"><i class="fa-solid fa-arrow-left"></i> Back to home</a>
+  </div>
+</div>
+
+<div class="toast-c" id="toastContainer"></div>
+
+<script src="js/api.js"></script>
+<script>
+  // Eye toggle
+  document.getElementById('eyeBtn').addEventListener('click', () => {
+    const inp = document.getElementById('password');
+    const icon = document.getElementById('eyeBtn').querySelector('i');
+    if (inp.type === 'password') { inp.type = 'text'; icon.className = 'fa-regular fa-eye-slash'; }
+    else { inp.type = 'password'; icon.className = 'fa-regular fa-eye'; }
+  });
+
+  // Redirect if already logged in
+  if (Auth.isLoggedIn()) window.location.href = '/advanced-dashboard.html';
+
+  // Demo fill
+  function fillDemo() {
+    document.getElementById('username').value = 'demo';
+    document.getElementById('password').value = 'demo123';
+    // Go straight to dashboard in demo mode
+    localStorage.setItem('pc_user', JSON.stringify({ username:'Demo User', email:'demo@plagiacheck.ai', role:'STUDENT', userId:0 }));
+    localStorage.setItem('pc_token','demo_token');
+    window.location.href = '/advanced-dashboard.html';
+  }
+
+  function showErr(msg) {
+    const a = document.getElementById('errAlert');
+    document.getElementById('errMsg').textContent = msg;
+    a.style.display = 'flex';
+  }
+  function hideErr() { document.getElementById('errAlert').style.display = 'none'; }
+
+  function setLoading(on) {
+    document.getElementById('btnLabel').style.display   = on ? 'none' : 'flex';
+    document.getElementById('btnSpinner').style.display = on ? 'flex' : 'none';
+    document.getElementById('submitBtn').disabled = on;
+  }
+
+  document.getElementById('loginForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    hideErr();
+    const username = document.getElementById('username').value.trim();
+    const password = document.getElementById('password').value;
+    let ok = true;
+
+    const uErr = document.getElementById('usernameErr');
+    const pErr = document.getElementById('passwordErr');
+    uErr.style.display = 'none'; pErr.style.display = 'none';
+
+    if (!username) { uErr.style.display = 'block'; ok = false; }
+    if (!password) { pErr.style.display = 'block'; ok = false; }
+    if (!ok) return;
+
+    setLoading(true);
+    try {
+      const data = await API.auth.login({ username, password });
+      Auth.setSession(data);
+      showToast('Welcome back, ' + data.username + '! ✅');
+      setTimeout(() => window.location.href = '/advanced-dashboard.html', 700);
+    } catch (err) {
+      setLoading(false);
+      showErr(err.message || 'Invalid username or password');
+    }
+  });
+
+  function showToast(msg) {
+    const t = document.createElement('div');
+    t.className = 'toast'; t.textContent = msg;
+    document.getElementById('toastContainer').appendChild(t);
+    setTimeout(() => t.remove(), 3500);
+  }
+</script>
+</body>
+</html>

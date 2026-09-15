@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Plagiarism Report — PlagiaCheck</title>
+<link rel="stylesheet" href="css/advanced.css"/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+<style>
+/* ── Screen layout ─────────────────────── */
+.report-layout { display: grid; grid-template-columns: 200px 1fr; gap: 1.5rem; max-width: 1200px; margin: 0 auto; }
+.report-toc-sticky { position: sticky; top: 80px; align-self: start; }
+.toc-panel { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--r-lg); overflow: hidden; }
+.toc-hdr { padding: .85rem 1rem; background: var(--bg-card2); border-bottom: 1px solid var(--border); font-weight: 700; font-size: .85rem; display: flex; align-items: center; gap: .5rem; }
+.toc-link { display: flex; align-items: center; gap: .5rem; padding: .5rem .85rem; font-size: .79rem; color: var(--text-secondary); cursor: pointer; transition: var(--t-base); border-left: 3px solid transparent; }
+.toc-link:hover, .toc-link.active { background: var(--primary-light); color: var(--primary); border-left-color: var(--primary); }
+.toc-num { font-size: .65rem; color: var(--text-muted); min-width: 18px; font-weight: 700; }
+/* ── Report Header Card ─────────────────── */
+.report-hero { background: linear-gradient(135deg, rgba(108,99,255,.18), rgba(0,217,181,.07)); border: 1px solid rgba(108,99,255,.3); border-radius: var(--r-xl); padding: 2rem 2.5rem; margin-bottom: 1.5rem; position: relative; overflow: hidden; }
+.report-hero::after { content: 'PLAGIARISM REPORT'; position: absolute; right: -20px; top: 50%; transform: translateY(-50%); font-size: 8rem; font-weight: 900; color: rgba(255,255,255,.025); font-family: 'Sora',sans-serif; white-space: nowrap; pointer-events: none; }
+.report-hero-grid { display: flex; align-items: center; gap: 2rem; flex-wrap: wrap; }
+.score-donut { position: relative; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.score-donut-text { position: absolute; text-align: center; }
+.score-donut-val { font-family: 'Sora',sans-serif; font-size: 1.5rem; font-weight: 800; line-height: 1; }
+.score-donut-lbl { font-size: .65rem; color: var(--text-muted); }
+/* ── Section dividers ───────────────────── */
+.report-sec { scroll-margin-top: 80px; margin-bottom: 1.5rem; }
+.report-sec-title { font-family: 'Sora',sans-serif; font-size: 1rem; font-weight: 800; padding-bottom: .6rem; border-bottom: 1px solid var(--border); margin-bottom: 1rem; display: flex; align-items: center; gap: .6rem; }
+.report-sec-num { width: 26px; height: 26px; border-radius: 50%; background: var(--primary-light); color: var(--primary); font-size: .75rem; font-weight: 800; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+/* ── Action bar ─────────────────────────── */
+.action-bar { display: flex; gap: .75rem; flex-wrap: wrap; margin-bottom: 1.5rem; padding: 1rem 1.25rem; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--r-lg); align-items: center; }
+.action-bar-title { font-weight: 700; font-size: .9rem; flex: 1; min-width: 140px; }
+/* ── Match evidence card ────────────────── */
+.ev-card { background: var(--bg-card2); border: 1px solid var(--border); border-radius: var(--r-md); padding: 1rem; margin-bottom: .75rem; transition: var(--t-base); }
+.ev-card:hover { border-color: var(--border-hl); }
+.ev-text-pair { display: grid; grid-template-columns: 1fr 1fr; gap: .75rem; margin: .75rem 0; }
+.ev-quote { background: var(--bg-card3); border-radius: var(--r-xs); padding: .65rem .85rem; font-size: .8rem; font-style: italic; color: var(--text-secondary); line-height: 1.65; }
+.ev-quote-label { font-size: .62rem; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; color: var(--text-muted); margin-bottom: .3rem; font-style: normal; }
+/* ── Score metrics inline ───────────────── */
+.score-inline-row { display: flex; gap: 1rem; flex-wrap: wrap; font-size: .8rem; padding: .5rem 0; }
+.score-inline-item .si-label { color: var(--text-muted); }
+.score-inline-item .si-val   { font-weight: 700; }
+/* ── Print ──────────────────────────────── */
+@media print {
+  .adv-sidebar, .adv-topbar, .action-bar, .float-chat-btn, .float-chat-panel,
+  .report-toc-sticky, #toastContainer { display: none !important; }
+  .report-layout { display: block !important; }
+  .page-body { padding: 0 !important; }
+  body { background: white !important; color: #111 !important; font-size: 11pt; }
+  .report-hero { background: #f0f4ff !important; border-color: #c0c0e0 !important; }
+  .panel, .ev-card, .report-sec { border-color: #ddd !important; background: white !important; }
+  .panel-title, .report-sec-title, .kpi-label, .ni-title, .ai-name { color: #000 !important; }
+  .panel-body, .rm-value, .kpi-value, .ev-quote, .layer-name { color: #333 !important; background: #f8f8f8 !important; }
+  .match-chip { border: 1px solid #999 !important; color: #333 !important; background: #f0f0f0 !important; }
+  .ai-explanation { background: #f5f5ff !important; border-color: #c0c0e0 !important; color: #333 !important; }
+  .score-donut-val, .section-pct { color: #333 !important; }
+  a { color: #2244aa !important; }
+  .report-hero::after { display: none; }
+}
+</style>
+</head>
+<body>
+<div class="app-shell">
+<!-- Sidebar -->
+<aside class="adv-sidebar">
+  <div class="sidebar-brand"><div class="brand-logo">P</div><div><div class="brand-text">PlagiaCheck</div><div class="brand-sub">Academic Integrity AI</div></div></div>
+  <div class="nav-section">
+    <div class="nav-section-label">Analysis</div>
+    <a href="advanced-dashboard.html" class="nav-item"><span class="nav-icon"><i class="fa-solid fa-gauge-high"></i></span><span>Overview</span></a>
+    <a href="comparison.html" class="nav-item"><span class="nav-icon"><i class="fa-solid fa-code-compare"></i></span><span>Document Comparison</span></a>
+    <a href="word-analysis.html" class="nav-item"><span class="nav-icon"><i class="fa-solid fa-spell-check"></i></span><span>Word Analysis</span></a>
+    <a href="visualization.html" class="nav-item"><span class="nav-icon"><i class="fa-solid fa-cube"></i></span><span>3D Visualization</span></a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-label">Intelligence</div>
+    <a href="ai-assistant.html" class="nav-item"><span class="nav-icon"><i class="fa-solid fa-robot"></i></span><span>AI Assistant</span></a>
+    <a href="teacher-review.html" class="nav-item"><span class="nav-icon"><i class="fa-solid fa-user-check"></i></span><span>Teacher Review</span></a>
+    <a href="report.html" class="nav-item active"><span class="nav-icon"><i class="fa-solid fa-file-lines"></i></span><span>Reports</span></a>
+  </div>
+  <div class="nav-section">
+    <a href="advanced-dashboard.html" class="nav-item"><span class="nav-icon"><i class="fa-solid fa-arrow-left"></i></span><span>Back</span></a>
+    <a href="#" class="nav-item logout-btn"><span class="nav-icon"><i class="fa-solid fa-right-from-bracket"></i></span><span>Logout</span></a>
+  </div>
+  <div class="sidebar-bottom"><div class="ai-status"><div class="ai-pulse"></div><div><div style="font-size:.8rem;font-weight:600">PlagiGuard AI</div><div style="font-size:.68rem;color:var(--text-muted)">Active</div></div></div></div>
+</aside>
+
+<div class="page-content">
+  <div class="adv-topbar">
+    <div class="topbar-left"><div class="breadcrumb"><a href="advanced-dashboard.html">Overview</a><span class="sep">/</span><span class="crumb-active">Report</span></div></div>
+    <div class="topbar-right">
+      <div class="topbar-user-chip">
+        <div class="topbar-avatar" id="topbarAvatar">U</div>
+        <span id="topbarUserName">User</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="page-body">
+
+    <!-- Action bar -->
+    <div class="action-bar">
+      <div class="action-bar-title"><i class="fa-solid fa-file-lines" style="color:var(--primary)"></i> Plagiarism Report</div>
+      <button class="btn btn-outline btn-sm" onclick="exportJSON()"><i class="fa-solid fa-file-code"></i> Export JSON</button>
+      <button class="btn btn-outline btn-sm" onclick="copyReport()"><i class="fa-solid fa-copy"></i> Copy Text</button>
+      <button class="btn btn-outline btn-sm" onclick="printReport()"><i class="fa-solid fa-print"></i> Print</button>
+      <button class="btn btn-primary" onclick="downloadPDF()"><i class="fa-solid fa-file-pdf"></i> Download PDF</button>
+    </div>
+
+    <div class="report-layout">
+      <!-- TOC -->
+      <div class="report-toc-sticky">
+        <div class="toc-panel">
+          <div class="toc-hdr"><i class="fa-solid fa-list" style="color:var(--primary)"></i> Contents</div>
+          <div id="tocLinks"></div>
+        </div>
+        <div style="margin-top:1rem">
+          <button class="btn btn-accent btn-sm btn-full" onclick="window.location='ai-assistant.html'">
+            <i class="fa-solid fa-robot"></i> Ask AI
+          </button>
+        </div>
+      </div>
+
+      <!-- Report body -->
+      <div id="reportBody">
+
+        <!-- Hero -->
+        <div class="report-hero" id="sec-hero">
+          <div class="report-hero-grid">
+            <div class="score-donut">
+              <svg id="donutSvg" width="140" height="140" viewBox="0 0 140 140">
+                <circle cx="70" cy="70" r="54" fill="none" stroke="rgba(255,255,255,.06)" stroke-width="16"/>
+                <circle cx="70" cy="70" r="54" fill="none" stroke="url(#dr)" stroke-width="16"
+                  stroke-linecap="round" id="donutArc"
+                  stroke-dasharray="339" stroke-dashoffset="339"
+                  transform="rotate(-90 70 70)"/>
+                <defs><linearGradient id="dr" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" style="stop-color:#FF7A00"/><stop offset="100%" style="stop-color:#FF4D6D"/>
+                </linearGradient></defs>
+              </svg>
+              <div class="score-donut-text">
+                <div class="score-donut-val" id="donutVal" style="color:var(--risk-high)">—</div>
+                <div class="score-donut-lbl">Similarity</div>
+              </div>
+            </div>
+            <div style="flex:1;min-width:220px">
+              <div style="font-size:.7rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--primary);margin-bottom:.4rem">Academic Integrity Report</div>
+              <div style="font-family:'Sora',sans-serif;font-size:1.3rem;font-weight:800;line-height:1.3;margin-bottom:.85rem" id="heroTitle">—</div>
+              <div id="heroMeta" style="display:flex;flex-wrap:wrap;gap:.75rem;font-size:.8rem;color:var(--text-secondary)"></div>
+              <div style="margin-top:1rem;display:flex;gap:.75rem;flex-wrap:wrap" id="heroScores"></div>
+            </div>
+          </div>
+          <div style="margin-top:1.25rem;padding:.85rem 1rem;background:rgba(255,181,71,.08);border:1px solid rgba(255,181,71,.25);border-radius:var(--r-sm);font-size:.8rem;color:#ffc562">
+            <i class="fa-solid fa-triangle-exclamation"></i>
+            <strong>Important:</strong> Similarity scores do not constitute plagiarism. All matches require teacher review before any academic integrity determination is made.
+          </div>
+        </div>
+
+        <!-- 1. Executive Summary -->
+        <div class="report-sec panel" id="sec-1">
+          <div class="panel-header"><div class="panel-title"><div class="report-sec-num">1</div> Executive Summary</div></div>
+          <div class="panel-body" id="execSummary"></div>
+        </div>
+
+        <!-- 2. Score Breakdown -->
+        <div class="report-sec panel" id="sec-2">
+          <div class="panel-header"><div class="panel-title"><div class="report-sec-num">2</div> Similarity & Originality Scores</div></div>
+          <div class="panel-body">
+            <div class="kpi-grid" id="scoreKPIs"></div>
+          </div>
+        </div>
+
+        <!-- 3. Section Analysis -->
+        <div class="report-sec panel" id="sec-3">
+          <div class="panel-header"><div class="panel-title"><div class="report-sec-num">3</div> Section Analysis</div></div>
+          <div class="panel-body" id="sectionTable"></div>
+        </div>
+
+        <!-- 4. Source Attribution -->
+        <div class="report-sec panel" id="sec-4">
+          <div class="panel-header"><div class="panel-title"><div class="report-sec-num">4</div> Source Attribution</div></div>
+          <div class="panel-body" id="sourceAttrib"></div>
+        </div>
+
+        <!-- 5. Detection Layers -->
+        <div class="report-sec panel" id="sec-5">
+          <div class="panel-header"><div class="panel-title"><div class="report-sec-num">5</div> Multi-Level Detection Results</div></div>
+          <div class="panel-body"><div class="layers-grid" id="layersGrid"></div></div>
+        </div>
+
+        <!-- 6. Match Evidence -->
+        <div class="report-sec panel" id="sec-6">
+          <div class="panel-header">
+            <div class="panel-title"><div class="report-sec-num">6</div> Match Evidence</div>
+            <div class="panel-actions">
+              <select class="filter-select" id="matchFilter" onchange="renderMatches(this.value)">
+                <option value="">All Matches</option>
+                <option>EXACT</option><option>SEMANTIC</option><option>PARAPHRASE</option><option>STRUCTURAL</option>
+              </select>
+            </div>
+          </div>
+          <div class="panel-body" id="matchEvidence"></div>
+        </div>
+
+        <!-- 7. Citation Analysis -->
+        <div class="report-sec panel" id="sec-7">
+          <div class="panel-header"><div class="panel-title"><div class="report-sec-num">7</div> Citation Analysis</div></div>
+          <div class="panel-body" id="citationSection"></div>
+        </div>
+
+        <!-- 8. AI Explanations -->
+        <div class="report-sec panel" id="sec-8">
+          <div class="panel-header"><div class="panel-title"><div class="report-sec-num">8</div><i class="fa-solid fa-robot" style="color:var(--primary)"></i> AI Explanations</div></div>
+          <div class="panel-body" id="aiExplanations"></div>
+        </div>
+
+        <!-- Footer -->
+        <div style="text-align:center;padding:1.5rem;color:var(--text-muted);font-size:.75rem;border-top:1px solid var(--border)">
+          Generated by <strong style="color:var(--primary)">PlagiaCheck</strong> Academic Integrity Platform ·
+          <span id="reportDateFooter"></span> ·
+          This report is for review purposes only
+        </div>
+      </div>
+    </div><!-- /report-layout -->
+  </div><!-- /page-body -->
+</div><!-- /page-content -->
+</div><!-- /app-shell -->
+
+<!-- Floating Chat -->
+<button class="float-chat-btn" id="floatChatBtn">🤖<span class="notif">!</span></button>
+<div class="float-chat-panel" id="floatChatPanel">
+  <div class="chat-container">
+    <div class="chat-header">
+      <div class="chat-avatar">🤖</div>
+      <div><div class="chat-name">PlagiGuard AI</div>
+        <div class="chat-status"><div style="width:6px;height:6px;border-radius:50%;background:var(--accent)"></div>Online</div>
+      </div>
+    </div>
+    <div class="chat-messages" id="floatMessages"></div>
+    <div class="chat-prompts">
+      <span class="prompt-chip">[Summary]</span>
+      <span class="prompt-chip">[Top sources]</span>
+      <span class="prompt-chip">[Why flagged?]</span>
+    </div>
+    <div class="chat-input-row">
+      <textarea class="chat-input" rows="1" placeholder="Ask about the report…"></textarea>
+      <button class="btn btn-primary chat-send-btn" style="padding:.55rem .8rem"><i class="fa-solid fa-paper-plane"></i></button>
+    </div>
+  </div>
+</div>
+<div class="toast-container" id="toastContainer"></div>
+<script src="js/engine.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  initAdvNav();
+  initFloatingChat();
+  buildReport();
+  animateDonut();
+  setupTOCScroll();
+});
+
+/* ── Build Report ──────────────────────────────────────────── */
+function buildReport() {
+  const k = MOCK_DATA.kpi;
+  const now = new Date();
+  document.getElementById('reportDateFooter').textContent =
+    now.toLocaleDateString('en-US', { year:'numeric', month:'long', day:'numeric', hour:'2-digit', minute:'2-digit' });
+
+  // Hero
+  document.getElementById('donutVal').textContent = k.overallSimilarity + '%';
+  document.getElementById('donutVal').style.color = scoreColor(k.overallSimilarity);
+  document.getElementById('heroTitle').textContent = MOCK_DATA.student.title;
+  document.getElementById('heroMeta').innerHTML = [
+    ['<i class="fa-solid fa-file"></i>', 'Student: ' + MOCK_DATA.student.filename],
+    ['<i class="fa-solid fa-book"></i>', 'Reference: ' + MOCK_DATA.reference.filename],
+    ['<i class="fa-solid fa-calendar"></i>', now.toLocaleDateString()],
+    ['<i class="fa-solid fa-clock"></i>', fmtMs(k.processingTimeMs)],
+    ['<i class="fa-solid fa-shield"></i>', 'Confidence: ' + k.confidenceScore + '%'],
+  ].map(([ico,txt]) => `<span>${ico} ${txt}</span>`).join('');
+  document.getElementById('heroScores').innerHTML = [
+    [k.overallSimilarity+'%',   'Overall Similarity',  scoreColor(k.overallSimilarity)],
+    [k.originalityEstimate+'%', 'Originality Est.',    'var(--risk-low)'],
+    [k.highConfidenceMatches,   'High-Confidence',     'var(--danger)'],
+    [k.citationIssues,          'Missing Citations',   'var(--risk-high)'],
+  ].map(([v,l,c]) => `<div style="background:var(--bg-card2);border:1px solid var(--border);border-radius:var(--r-sm);padding:.5rem .85rem;text-align:center">
+    <div style="font-family:'Sora',sans-serif;font-size:1.2rem;font-weight:800;color:${c}">${v}</div>
+    <div style="font-size:.67rem;color:var(--text-muted);margin-top:2px">${l}</div>
+  </div>`).join('');
+
+  // TOC
+  const sections = [
+    'Executive Summary','Similarity & Originality','Section Analysis',
+    'Source Attribution','Detection Layers','Match Evidence','Citation Analysis','AI Explanations'
+  ];
+  document.getElementById('tocLinks').innerHTML = sections.map((t,i) => `
+    <div class="toc-link" onclick="scrollToSec(${i+1})">
+      <span class="toc-num">${i+1}</span><span>${t}</span>
+    </div>`).join('');
+
+  // 1. Exec Summary
+  document.getElementById('execSummary').innerHTML = `
+    <p style="font-size:.88rem;line-height:1.85;color:var(--text-secondary)">
+      The document <em>"${escHtml(MOCK_DATA.student.title)}"</em> was analyzed against
+      <em>"${escHtml(MOCK_DATA.reference.title)}"</em> using PlagiaCheck's 9-layer AI detection engine,
+      which examined ${k.sentencesAnalyzed} sentences across character, word, phrase, sentence, semantic,
+      paraphrase, paragraph, section, and document levels.
+    </p>
+    <p style="font-size:.88rem;line-height:1.85;color:var(--text-secondary);margin-top:.85rem">
+      The overall similarity score is <strong style="color:${scoreColor(k.overallSimilarity)}">${k.overallSimilarity}%</strong>
+      with an originality estimate of <strong style="color:var(--risk-low)">${k.originalityEstimate}%</strong>.
+      A total of <strong>${MOCK_DATA.matches.length}</strong> potentially similar passages were detected,
+      of which <strong>${k.highConfidenceMatches}</strong> are classified as high-confidence matches.
+      <strong>${k.citationIssues}</strong> passages have no detected citation.
+    </p>
+    <div style="background:rgba(108,99,255,.08);border:1px solid rgba(108,99,255,.2);border-radius:var(--r-sm);padding:.85rem 1rem;margin-top:1rem;font-size:.82rem;color:var(--text-secondary)">
+      <i class="fa-solid fa-robot" style="color:var(--primary)"></i>
+      <strong style="color:var(--primary)">AI Summary:</strong>
+      ${getAIResponse('Give me a summary of the plagiarism findings', null).replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>').replace(/\n/g,'<br>')}
+    </div>`;
+
+  // 2. Score KPIs
+  const kpiData = [
+    { label:'Overall Similarity',     val:k.overallSimilarity+'%',         color:scoreColor(k.overallSimilarity), icon:'🎯' },
+    { label:'Originality Estimate',   val:k.originalityEstimate+'%',       color:'var(--risk-low)',               icon:'✨' },
+    { label:'High-Confidence Matches',val:k.highConfidenceMatches,         color:'var(--danger)',                 icon:'🔴' },
+    { label:'Semantic Matches',       val:k.semanticMatches,               color:'var(--primary)',                icon:'🧠' },
+    { label:'Exact Word Matches',     val:k.exactWordMatches,              color:'var(--risk-critical)',          icon:'🔤' },
+    { label:'Paraphrased Sentences',  val:k.paraphrasedSentences,         color:'var(--warning)',                icon:'🔄' },
+    { label:'Sources Detected',       val:k.sourcesDetected,              color:'var(--info)',                   icon:'📚' },
+    { label:'Missing Citations',      val:k.citationIssues,               color:'var(--risk-high)',              icon:'⚠️' },
+  ];
+  document.getElementById('scoreKPIs').innerHTML = kpiData.map(d => `
+    <div class="kpi-card" style="--kpi-color:${d.color}">
+      <div class="kpi-label">${d.label}</div>
+      <div class="kpi-value" style="color:${d.color}">${d.val}</div>
+      <div class="kpi-icon">${d.icon}</div>
+    </div>`).join('');
+
+  // 3. Section Analysis
+  document.getElementById('sectionTable').innerHTML = `
+    <div style="overflow-x:auto">
+    <table style="width:100%;border-collapse:collapse">
+      <thead><tr style="background:var(--bg-card2)">${['Section','Similarity','Matches','Sentences','Risk Level','Action'].map(h=>`
+        <th style="padding:.65rem 1rem;text-align:left;font-size:.7rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text-muted);border-bottom:1px solid var(--border)">${h}</th>`).join('')}</tr></thead>
+      <tbody>${MOCK_DATA.sections.map(s=>`
+        <tr style="border-bottom:1px solid rgba(255,255,255,.04);transition:background .15s" onmouseover="this.style.background='rgba(108,99,255,.04)'" onmouseout="this.style.background=''">
+          <td style="padding:.75rem 1rem;font-weight:600">${s.name}</td>
+          <td style="padding:.75rem 1rem">
+            <div class="flex-gap" style="gap:.6rem">
+              <span style="font-family:'Sora',sans-serif;font-weight:800;color:${scoreColor(s.score)}">${s.score}%</span>
+              <div style="width:80px;height:5px;background:rgba(255,255,255,.05);border-radius:3px;overflow:hidden">
+                <div style="height:100%;background:${scoreColor(s.score)};width:${s.score}%"></div>
+              </div>
+            </div>
+          </td>
+          <td style="padding:.75rem 1rem;color:var(--text-secondary)">${s.matches}</td>
+          <td style="padding:.75rem 1rem;color:var(--text-secondary)">${s.sentences}</td>
+          <td style="padding:.75rem 1rem">${riskBadge(s.score>=70?'CRITICAL':s.score>=50?'HIGH':s.score>=25?'MEDIUM':'LOW')}</td>
+          <td style="padding:.75rem 1rem">
+            <a href="comparison.html?section=${encodeURIComponent(s.name)}" class="btn btn-outline btn-sm">
+              <i class="fa-solid fa-arrow-right"></i>
+            </a>
+          </td>
+        </tr>`).join('')}
+      </tbody>
+    </table></div>`;
+
+  // 4. Sources
+  document.getElementById('sourceAttrib').innerHTML = MOCK_DATA.sources.map((s,i) => `
+    <div style="display:flex;align-items:center;gap:1rem;padding:.9rem 0;border-bottom:1px solid rgba(255,255,255,.04)">
+      <span style="font-family:'Sora',sans-serif;font-size:1.1rem;font-weight:800;color:var(--text-muted);min-width:28px">#${i+1}</span>
+      <div style="flex:1;min-width:0">
+        <div style="font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(s.title)}</div>
+        <a href="${escHtml(s.url)}" target="_blank" rel="noopener" style="font-size:.72rem;color:var(--primary)">${escHtml(s.url)}</a>
+      </div>
+      <div style="min-width:140px">
+        <div style="height:6px;background:rgba(255,255,255,.05);border-radius:3px;overflow:hidden">
+          <div style="height:100%;background:${scoreColor(s.pct)};width:${s.pct*2}%;transition:width .8s ease"></div>
+        </div>
+        <div style="font-size:.7rem;color:var(--text-muted);margin-top:3px">${s.matchCount} matching passages</div>
+      </div>
+      <div style="font-family:'Sora',sans-serif;font-size:1.15rem;font-weight:800;color:${scoreColor(s.pct)};min-width:48px;text-align:right">${s.pct}%</div>
+    </div>`).join('');
+
+  // 5. Layers
+  const layerColors = ['#3B9EFF','#6C63FF','#00D9B5','#FFB547','#FF7A00','#FF4D6D','#FFB547','#FF7A00','#FF4D6D'];
+  document.getElementById('layersGrid').innerHTML = MOCK_DATA.layers.map((l,i) => `
+    <div class="layer-row">
+      <div class="layer-num">${l.level}</div>
+      <div class="layer-name">${l.name} Similarity</div>
+      <div class="layer-bar-wrap">
+        <div class="layer-bar">
+          <div class="layer-fill" style="background:${layerColors[i]};width:${l.score}%"></div>
+        </div>
+      </div>
+      <div class="layer-pct" style="color:${layerColors[i]}">${l.score}%</div>
+    </div>`).join('');
+
+  // 6. Match Evidence (all matches by default)
+  renderMatches('');
+
+  // 7. Citation Analysis
+  const missing = MOCK_DATA.matches.filter(m => !m.citation).length;
+  const found   = MOCK_DATA.matches.filter(m =>  m.citation).length;
+  document.getElementById('citationSection').innerHTML = `
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-bottom:1.25rem">
+      <div class="report-metric" style="border-left-color:var(--danger)">
+        <div class="rm-label">Missing Citations</div>
+        <div class="rm-value" style="color:var(--danger)">${missing}</div>
+      </div>
+      <div class="report-metric" style="border-left-color:var(--success)">
+        <div class="rm-label">Citations Found</div>
+        <div class="rm-value" style="color:var(--success)">${found}</div>
+      </div>
+      <div class="report-metric" style="border-left-color:var(--warning)">
+        <div class="rm-label">Total Flagged</div>
+        <div class="rm-value" style="color:var(--warning)">${MOCK_DATA.matches.length}</div>
+      </div>
+    </div>
+    <p style="font-size:.85rem;color:var(--text-secondary);line-height:1.75;margin-bottom:.75rem">
+      Citation detection scanned for APA, MLA, IEEE, numbered references, author-year formats, URLs and DOI references.
+      <strong>${missing}</strong> passages with detected similarity have no citation — flagged for priority review.
+    </p>
+    <div style="background:rgba(255,181,71,.08);border:1px solid rgba(255,181,71,.25);border-radius:var(--r-sm);padding:.8rem 1rem;font-size:.8rem;color:#ffc562">
+      <i class="fa-solid fa-circle-info"></i>
+      A missing citation raises review priority but does not automatically constitute plagiarism. The teacher decides.
+    </div>`;
+
+  // 8. AI Explanations
+  document.getElementById('aiExplanations').innerHTML = MOCK_DATA.matches.slice(0,6).map(m => {
+    const s = MOCK_DATA.student.sentences.find(x=>x.id===m.studentId);
+    const r = MOCK_DATA.reference.sentences.find(x=>x.id===m.refId);
+    return `<div style="margin-bottom:1rem;padding-bottom:1rem;border-bottom:1px solid rgba(255,255,255,.05)">
+      <div class="flex-gap" style="margin-bottom:.6rem;flex-wrap:wrap">
+        ${matchChip(m.type)}
+        <span style="font-size:.8rem;color:var(--text-muted)">${s?.section}</span>
+        <span style="margin-left:auto;font-family:'Sora',sans-serif;font-weight:800;color:${scoreColor(m.score)}">${m.score}% similarity</span>
+      </div>
+      <div class="ev-text-pair">
+        <div class="ev-quote"><div class="ev-quote-label">Reference</div>"${escHtml(r?.text||'—')}"</div>
+        <div class="ev-quote"><div class="ev-quote-label">Student</div>"${escHtml(s?.text||'—')}"</div>
+      </div>
+      <div class="ai-explanation">
+        <div class="ai-tag"><i class="fa-solid fa-robot"></i> AI Analysis</div>
+        ${escHtml(AI_EXPLANATIONS[m.type]?.(m)||'—')}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderMatches(type) {
+  const filtered = type ? MOCK_DATA.matches.filter(m=>m.type===type) : MOCK_DATA.matches;
+  document.getElementById('matchEvidence').innerHTML = filtered.map(m => {
+    const s = MOCK_DATA.student.sentences.find(x=>x.id===m.studentId);
+    const r = MOCK_DATA.reference.sentences.find(x=>x.id===m.refId);
+    return `<div class="ev-card">
+      <div class="flex-gap" style="flex-wrap:wrap;margin-bottom:.75rem">
+        ${matchChip(m.type)}
+        <span style="font-size:.8rem;color:var(--text-muted)">${s?.section}</span>
+        <div style="margin-left:auto;display:flex;gap:.75rem;font-size:.78rem;flex-wrap:wrap">
+          <span>Score: <strong style="color:${scoreColor(m.score)}">${m.score}%</strong></span>
+          <span>Semantic: <strong style="color:var(--primary)">${m.semanticSim}%</strong></span>
+          <span>Phrase: <strong style="color:var(--accent)">${m.phraseOverlap}%</strong></span>
+          <span>Evidence: <strong style="color:${m.evidenceStrength==='HIGH'?'var(--danger)':'var(--warning)'}">${m.evidenceStrength}</strong></span>
+          <span>Citation: <strong style="color:${m.citation?'var(--success)':'var(--danger)'}">${m.citation?'✅ Found':'❌ Missing'}</strong></span>
+        </div>
+      </div>
+      <div class="ev-text-pair">
+        <div class="ev-quote"><div class="ev-quote-label" style="border-left:3px solid var(--warning);padding-left:.4rem">Reference</div>"${escHtml(r?.text||'—')}"</div>
+        <div class="ev-quote"><div class="ev-quote-label" style="border-left:3px solid var(--danger);padding-left:.4rem">Student</div>"${escHtml(s?.text||'—')}"</div>
+      </div>
+      <div class="score-inline-row">
+        ${[['Exact Overlap',m.exactOverlap+'%','var(--danger)'],['Paraphrase',m.paraphraseConf+'%','var(--accent)'],['Structural',m.structuralSim+'%','var(--info)']].map(([l,v,c])=>`
+        <div class="score-inline-item"><span class="si-label">${l}:</span> <span class="si-val" style="color:${c}">${v}</span></div>`).join('')}
+      </div>
+    </div>`;
+  }).join('') || '<div class="empty-state"><div class="empty-icon">✅</div><div class="empty-title">No matches in this filter</div></div>';
+}
+
+/* ── Donut animation ──────────────────── */
+function animateDonut() {
+  const arc  = document.getElementById('donutArc');
+  const score = MOCK_DATA.kpi.overallSimilarity;
+  if (!arc) return;
+  setTimeout(() => {
+    arc.style.transition = 'stroke-dashoffset 1.6s cubic-bezier(0.4,0,0.2,1)';
+    arc.style.strokeDashoffset = String(339 - (339 * score / 100));
+  }, 200);
+}
+
+/* ── TOC active on scroll ─────────────── */
+function setupTOCScroll() {
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        const num = e.target.id.replace('sec-','');
+        document.querySelectorAll('.toc-link').forEach((l,i) => {
+          l.classList.toggle('active', i === parseInt(num)-1);
+        });
+      }
+    });
+  }, { threshold: 0.3, rootMargin: '-80px 0px 0px 0px' });
+  for (let i = 1; i <= 8; i++) {
+    const el = document.getElementById('sec-'+i);
+    if (el) observer.observe(el);
+  }
+}
+
+function scrollToSec(n) {
+  const el = document.getElementById('sec-'+n);
+  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+/* ── Export / Print / PDF ─────────────── */
+function exportJSON() {
+  const data = {
+    report: { generatedAt: new Date().toISOString(), version: '1.0' },
+    document: { title: MOCK_DATA.student.title, filename: MOCK_DATA.student.filename },
+    reference: { title: MOCK_DATA.reference.title, filename: MOCK_DATA.reference.filename },
+    kpi: MOCK_DATA.kpi,
+    sections: MOCK_DATA.sections,
+    sources: MOCK_DATA.sources,
+    layers: MOCK_DATA.layers,
+    matches: MOCK_DATA.matches.map(m => ({
+      id: m.id, studentId: m.studentId, refId: m.refId,
+      type: m.type, score: m.score, semanticSim: m.semanticSim,
+      exactOverlap: m.exactOverlap, phraseOverlap: m.phraseOverlap,
+      paraphraseConf: m.paraphraseConf, structuralSim: m.structuralSim,
+      evidenceStrength: m.evidenceStrength, citation: m.citation
+    }))
+  };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url; a.download = 'plagiarism_report_' + Date.now() + '.json';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  toast('Report exported as JSON ✅', 'success');
+}
+
+function copyReport() {
+  const lines = [
+    `PLAGIARISM ANALYSIS REPORT`,
+    `Generated: ${new Date().toLocaleString()}`,
+    ``,
+    `Document: ${MOCK_DATA.student.title}`,
+    `Reference: ${MOCK_DATA.reference.title}`,
+    ``,
+    `SCORES:`,
+    `  Overall Similarity: ${MOCK_DATA.kpi.overallSimilarity}%`,
+    `  Originality: ${MOCK_DATA.kpi.originalityEstimate}%`,
+    `  High-Confidence Matches: ${MOCK_DATA.kpi.highConfidenceMatches}`,
+    `  Missing Citations: ${MOCK_DATA.kpi.citationIssues}`,
+    ``,
+    `SECTIONS:`,
+    ...MOCK_DATA.sections.map(s => `  ${s.name}: ${s.score}% (${s.matches} matches)`),
+    ``,
+    `SOURCES:`,
+    ...MOCK_DATA.sources.map(s => `  ${s.title}: ${s.pct}% (${s.matchCount} matches)`)
+  ];
+  navigator.clipboard.writeText(lines.join('\n'))
+    .then(() => toast('Report text copied to clipboard ✅', 'success'))
+    .catch(() => toast('Copy failed — try Export JSON instead', 'error'));
+}
+
+function printReport() {
+  window.print();
+}
+
+function downloadPDF() {
+  toast('Opening print dialog — choose "Save as PDF" as the destination printer.', 'info', 6000);
+  setTimeout(() => window.print(), 800);
+}
+</script>
+</body>
+</html>

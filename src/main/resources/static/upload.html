@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Upload Document — PlagiaCheck</title>
+  <link rel="stylesheet" href="css/advanced.css"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+  <style>
+    .app-wrapper{display:flex;min-height:100vh}
+    .content-area{flex:1;display:flex;flex-direction:column;overflow:hidden}
+    .top-bar{height:64px;background:rgba(10,12,24,.85);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 2rem;position:sticky;top:0;z-index:10}
+    .upload-wrap{max-width:700px;margin:0 auto;padding:2rem 1.5rem}
+    .upload-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--r-xl);padding:2rem;margin-bottom:1.25rem}
+    .upload-title{font-family:'Sora',sans-serif;font-size:1.4rem;font-weight:800;margin-bottom:.3rem}
+    .upload-title span{background:linear-gradient(135deg,var(--primary),var(--accent));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+    .upload-sub{font-size:.87rem;color:var(--text-secondary);margin-bottom:2rem}
+
+    /* Drop Zone */
+    .drop-zone{border:2px dashed rgba(108,99,255,.35);border-radius:var(--r-lg);padding:3rem 2rem;text-align:center;cursor:pointer;transition:all .25s;position:relative;background:rgba(108,99,255,.02)}
+    .drop-zone:hover,.drop-zone.drag-over{border-color:var(--primary);background:rgba(108,99,255,.07);box-shadow:inset 0 0 40px rgba(108,99,255,.06)}
+    .drop-zone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+    .dz-icon{width:76px;height:76px;border-radius:50%;margin:0 auto 1.25rem;background:linear-gradient(135deg,var(--primary),var(--accent));display:flex;align-items:center;justify-content:center;font-size:1.9rem;color:#fff;box-shadow:0 8px 32px rgba(108,99,255,.4)}
+    .dz-title{font-size:1.1rem;font-weight:700;margin-bottom:.5rem}
+    .dz-sub{font-size:.85rem;color:var(--text-secondary)}
+    .dz-chips{display:flex;justify-content:center;gap:.4rem;flex-wrap:wrap;margin-top:1rem}
+    .chip{padding:.25rem .7rem;border-radius:20px;background:var(--bg-card2);border:1px solid var(--border);font-size:.72rem;font-weight:600;color:var(--text-secondary)}
+
+    /* File preview */
+    .file-preview{display:none;align-items:center;gap:1rem;padding:1rem 1.25rem;border-radius:var(--r-md);background:var(--bg-card2);border:1px solid rgba(108,99,255,.3);margin-top:1rem}
+    .file-preview.show{display:flex}
+    .fp-icon{font-size:2rem;flex-shrink:0}
+    .fp-name{font-weight:700;font-size:.9rem}
+    .fp-size{font-size:.75rem;color:var(--text-secondary);margin-top:2px}
+    .fp-remove{margin-left:auto;background:none;border:none;color:var(--danger);cursor:pointer;font-size:1.1rem;padding:.25rem;transition:transform .15s}
+    .fp-remove:hover{transform:scale(1.2)}
+    .file-err{font-size:.78rem;color:var(--danger);margin-top:.5rem;display:none}
+
+    /* Title input */
+    .form-group{margin-bottom:1.25rem}
+    .form-label{display:block;font-size:.83rem;font-weight:600;color:var(--text-secondary);margin-bottom:.45rem}
+    .form-hint{font-size:.75rem;color:var(--text-muted);margin-top:.3rem}
+    .form-input{width:100%;background:var(--bg-input);border:1px solid var(--border);border-radius:var(--r-sm);padding:.72rem 1rem;color:var(--text-primary);font-size:.9rem;font-family:'Inter',sans-serif;outline:none;transition:all .2s}
+    .form-input:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(108,99,255,.12)}
+    .form-input::placeholder{color:var(--text-muted)}
+
+    /* Submit btn */
+    .submit-btn{width:100%;padding:.8rem;border:none;border-radius:var(--r-md);background:linear-gradient(135deg,var(--primary),var(--primary-dark));color:#fff;font-size:.95rem;font-weight:700;font-family:'Inter',sans-serif;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:.6rem;transition:all .25s;box-shadow:0 4px 20px rgba(108,99,255,.35);margin-top:.5rem}
+    .submit-btn:hover{transform:translateY(-1px);box-shadow:0 8px 30px rgba(108,99,255,.45)}
+    .submit-btn:disabled{opacity:.5;cursor:not-allowed;transform:none}
+    .spinner{width:18px;height:18px;border-radius:50%;border:2px solid rgba(255,255,255,.25);border-top-color:#fff;animation:spin .7s linear infinite}
+    @keyframes spin{to{transform:rotate(360deg)}}
+
+    /* Processing overlay */
+    .processing-overlay{display:none;position:fixed;inset:0;z-index:200;background:rgba(10,12,24,.95);backdrop-filter:blur(12px);flex-direction:column;align-items:center;justify-content:center;gap:1.5rem}
+    .processing-overlay.show{display:flex}
+    .pulse-ring{width:90px;height:90px;border-radius:50%;background:linear-gradient(135deg,var(--primary),var(--accent));display:flex;align-items:center;justify-content:center;font-size:1.7rem;color:#fff;position:relative;box-shadow:0 0 40px rgba(108,99,255,.5)}
+    .pulse-ring::before,.pulse-ring::after{content:'';position:absolute;border-radius:50%;border:2px solid var(--primary);animation:pulsate 2s ease-out infinite}
+    .pulse-ring::after{animation-delay:1s}
+    @keyframes pulsate{0%{width:100%;height:100%;opacity:.8}100%{width:220%;height:220%;opacity:0}}
+    .proc-title{font-family:'Sora',sans-serif;font-size:1.4rem;font-weight:800}
+    .proc-sub{font-size:.88rem;color:var(--text-secondary)}
+    .prog-outer{width:320px;height:7px;background:rgba(255,255,255,.06);border-radius:4px;overflow:hidden}
+    .prog-inner{height:100%;background:linear-gradient(90deg,var(--primary),var(--accent));border-radius:4px;width:0%;transition:width .4s ease}
+    .steps-list{display:flex;flex-direction:column;gap:.6rem}
+    .step-item{display:flex;align-items:center;gap:.75rem;font-size:.85rem;color:var(--text-muted);transition:color .3s}
+    .step-item.done{color:var(--success)}.step-item.active{color:var(--text-primary)}
+    .step-dot{width:22px;height:22px;border-radius:50%;border:2px solid currentColor;display:flex;align-items:center;justify-content:center;font-size:.65rem;flex-shrink:0}
+
+    /* Guidelines card */
+    .guide-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--r-lg);padding:1.5rem}
+    .guide-title{font-weight:700;margin-bottom:1rem;display:flex;align-items:center;gap:.5rem}
+    .guide-item{display:flex;gap:.75rem;font-size:.85rem;color:var(--text-secondary);margin-bottom:.65rem}
+    .guide-item i{color:var(--success);margin-top:2px;flex-shrink:0}
+    .guide-item strong{color:var(--text-primary)}
+
+    /* Alert */
+    .alert{display:none;padding:.85rem 1rem;border-radius:var(--r-sm);font-size:.85rem;margin-bottom:1rem;background:rgba(255,77,109,.1);border:1px solid rgba(255,77,109,.3);color:#ff6b87;align-items:center;gap:.6rem}
+    .alert.show{display:flex}
+
+    /* Toast */
+    .toast-c{position:fixed;top:1.5rem;right:1.5rem;z-index:999;display:flex;flex-direction:column;gap:.5rem}
+    .toast{padding:.75rem 1.1rem;border-radius:10px;background:var(--bg-card);border:1px solid rgba(34,197,94,.4);color:#4ade80;font-size:.85rem;font-weight:500;box-shadow:0 8px 24px rgba(0,0,0,.4)}
+  </style>
+</head>
+<body>
+<!-- Processing overlay -->
+<div class="processing-overlay" id="procOverlay">
+  <div class="pulse-ring">🔍</div>
+  <div class="proc-title" id="procTitle">Uploading Document…</div>
+  <div class="proc-sub" id="procSub">Please wait while we process your file</div>
+  <div class="prog-outer"><div class="prog-inner" id="progBar"></div></div>
+  <div class="steps-list" id="stepsList">
+    <div class="step-item active" id="st1"><div class="step-dot">1</div>Uploading file…</div>
+    <div class="step-item" id="st2"><div class="step-dot">2</div>Extracting text content</div>
+    <div class="step-item" id="st3"><div class="step-dot">3</div>Generating semantic embeddings</div>
+    <div class="step-item" id="st4"><div class="step-dot">4</div>Running similarity analysis</div>
+    <div class="step-item" id="st5"><div class="step-dot">5</div>Generating plagiarism report</div>
+  </div>
+</div>
+
+<div class="app-wrapper">
+  <!-- Sidebar -->
+  <aside class="adv-sidebar">
+    <div class="sidebar-brand"><div class="brand-logo">P</div><div><div class="brand-text">PlagiaCheck</div><div class="brand-sub">Academic Integrity AI</div></div></div>
+    <div class="nav-section">
+      <div class="nav-section-label">Analysis</div>
+      <a href="advanced-dashboard.html" class="nav-item"><span class="nav-icon"><i class="fa-solid fa-gauge-high"></i></span><span>Overview</span></a>
+      <a href="upload.html" class="nav-item active"><span class="nav-icon"><i class="fa-solid fa-cloud-arrow-up"></i></span><span>Upload</span></a>
+      <a href="comparison.html" class="nav-item"><span class="nav-icon"><i class="fa-solid fa-code-compare"></i></span><span>Comparison</span></a>
+      <a href="visualization.html" class="nav-item"><span class="nav-icon"><i class="fa-solid fa-cube"></i></span><span>3D View</span></a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-label">Intelligence</div>
+      <a href="ai-assistant.html" class="nav-item"><span class="nav-icon"><i class="fa-solid fa-robot"></i></span><span>AI Assistant</span></a>
+      <a href="teacher-review.html" class="nav-item"><span class="nav-icon"><i class="fa-solid fa-user-check"></i></span><span>Teacher Review</span></a>
+      <a href="report.html" class="nav-item"><span class="nav-icon"><i class="fa-solid fa-file-lines"></i></span><span>Reports</span></a>
+    </div>
+    <div class="nav-section">
+      <a href="advanced-dashboard.html" class="nav-item"><span class="nav-icon"><i class="fa-solid fa-arrow-left"></i></span><span>Back</span></a>
+      <a href="login.html" class="nav-item logout-btn"><span class="nav-icon"><i class="fa-solid fa-right-from-bracket"></i></span><span>Logout</span></a>
+    </div>
+    <div class="sidebar-bottom"><div class="ai-status"><div class="ai-pulse"></div><div><div style="font-size:.8rem;font-weight:600">PlagiGuard AI</div><div style="font-size:.68rem;color:var(--text-muted)">Active</div></div></div></div>
+  </aside>
+
+  <!-- Content -->
+  <div class="content-area">
+    <div class="top-bar">
+      <div style="font-family:'Sora',sans-serif;font-weight:700">Upload Document</div>
+      <div class="topbar-user-chip">
+        <div class="topbar-avatar" id="topbarAvatar">U</div>
+        <span id="topbarUserName">User</span>
+      </div>
+    </div>
+
+    <div class="upload-wrap">
+      <div class="upload-card">
+        <h1 class="upload-title">Upload <span>Document</span></h1>
+        <p class="upload-sub">Submit a PDF, DOCX, or TXT file to run AI-powered plagiarism analysis</p>
+
+        <div class="alert" id="uploadAlert">
+          <i class="fa-solid fa-circle-exclamation"></i><span id="alertMsg"></span>
+        </div>
+
+        <form id="uploadForm" novalidate>
+          <!-- Title -->
+          <div class="form-group">
+            <label class="form-label">Document Title <span style="color:var(--text-muted);font-weight:400">(optional)</span></label>
+            <input type="text" id="docTitle" class="form-input" placeholder="e.g. Research Paper — Spring 2026"/>
+            <div class="form-hint">Leave blank to use the filename as title.</div>
+          </div>
+
+          <!-- Drop zone -->
+          <div class="form-group">
+            <label class="form-label">Select File</label>
+            <div class="drop-zone" id="dropZone">
+              <input type="file" id="fileInput" accept=".pdf,.doc,.docx,.txt"/>
+              <div class="dz-icon"><i class="fa-solid fa-cloud-arrow-up"></i></div>
+              <div class="dz-title">Drop your file here, or click to browse</div>
+              <div class="dz-sub">Supports PDF, DOCX, DOC and TXT files</div>
+              <div class="dz-chips">
+                <span class="chip">PDF</span>
+                <span class="chip">DOCX</span>
+                <span class="chip">DOC</span>
+                <span class="chip">TXT</span>
+                <span class="chip">Max 10 MB</span>
+              </div>
+            </div>
+
+            <!-- File preview -->
+            <div class="file-preview" id="filePreview">
+              <div class="fp-icon" id="fpIcon">📄</div>
+              <div>
+                <div class="fp-name" id="fpName">—</div>
+                <div class="fp-size" id="fpSize">—</div>
+              </div>
+              <button type="button" class="fp-remove" id="fpRemove"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="file-err" id="fileErr">Please select a valid file.</div>
+          </div>
+
+          <button type="submit" class="submit-btn" id="submitBtn">
+            <span id="btnLabel"><i class="fa-solid fa-magnifying-glass"></i> Analyze for Plagiarism</span>
+            <span id="btnSpinner" style="display:none"><div class="spinner"></div> Uploading…</span>
+          </button>
+        </form>
+      </div>
+
+      <!-- Guidelines -->
+      <div class="guide-card">
+        <div class="guide-title"><i class="fa-solid fa-circle-info" style="color:var(--info)"></i> Submission Guidelines</div>
+        <div class="guide-item"><i class="fa-solid fa-check"></i><span>Maximum file size: <strong>10 MB</strong></span></div>
+        <div class="guide-item"><i class="fa-solid fa-check"></i><span>Supported formats: <strong>PDF, DOCX, DOC, TXT</strong></span></div>
+        <div class="guide-item"><i class="fa-solid fa-check"></i><span>Results available within <strong>30 seconds</strong></span></div>
+        <div class="guide-item"><i class="fa-solid fa-check"></i><span>Your documents are <strong>stored securely</strong> and privately</span></div>
+        <div class="guide-item"><i class="fa-solid fa-check"></i><span>Analysis uses <strong>9-layer AI detection</strong> — exact, semantic and paraphrase</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast-c" id="toastContainer"></div>
+<script src="js/api.js"></script>
+<script src="js/engine.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  initAdvNav();
+  initDropZone();
+  initForm();
+});
+
+let selectedFile = null;
+
+function initDropZone() {
+  const zone  = document.getElementById('dropZone');
+  const input = document.getElementById('fileInput');
+
+  input.addEventListener('change', () => { if (input.files[0]) handleFile(input.files[0]); });
+
+  zone.addEventListener('dragover',  e => { e.preventDefault(); zone.classList.add('drag-over'); });
+  zone.addEventListener('dragleave', e => { e.preventDefault(); zone.classList.remove('drag-over'); });
+  zone.addEventListener('drop', e => {
+    e.preventDefault(); zone.classList.remove('drag-over');
+    if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
+  });
+
+  document.getElementById('fpRemove').addEventListener('click', () => {
+    selectedFile = null;
+    input.value = '';
+    document.getElementById('filePreview').classList.remove('show');
+    document.getElementById('fileErr').style.display = 'none';
+  });
+}
+
+function handleFile(file) {
+  const allowed = ['application/pdf','application/msword',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document','text/plain'];
+  const ext = file.name.split('.').pop().toLowerCase();
+  document.getElementById('fileErr').style.display = 'none';
+
+  if (!allowed.includes(file.type) && !['pdf','doc','docx','txt'].includes(ext)) {
+    document.getElementById('fileErr').textContent = 'Unsupported file type. Use PDF, DOCX, or TXT.';
+    document.getElementById('fileErr').style.display = 'block';
+    return;
+  }
+  if (file.size > 10 * 1024 * 1024) {
+    document.getElementById('fileErr').textContent = 'File too large. Maximum size is 10 MB.';
+    document.getElementById('fileErr').style.display = 'block';
+    return;
+  }
+  selectedFile = file;
+  const icons = { pdf:'📕', doc:'📘', docx:'📘', txt:'📄' };
+  document.getElementById('fpIcon').textContent = icons[ext] || '📎';
+  document.getElementById('fpName').textContent = file.name;
+  document.getElementById('fpSize').textContent = formatFileSize(file.size);
+  document.getElementById('filePreview').classList.add('show');
+}
+
+function formatFileSize(b) {
+  if (b < 1024) return b + ' B';
+  if (b < 1048576) return (b/1024).toFixed(1) + ' KB';
+  return (b/1048576).toFixed(1) + ' MB';
+}
+
+function initForm() {
+  document.getElementById('uploadForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    document.getElementById('uploadAlert').classList.remove('show');
+
+    if (!selectedFile) {
+      document.getElementById('fileErr').textContent = 'Please select a file to upload.';
+      document.getElementById('fileErr').style.display = 'block';
+      return;
+    }
+
+    const title = document.getElementById('docTitle').value.trim();
+
+    // Show processing overlay
+    document.getElementById('procOverlay').classList.add('show');
+    document.getElementById('btnLabel').style.display   = 'none';
+    document.getElementById('btnSpinner').style.display = 'flex';
+    document.getElementById('submitBtn').disabled = true;
+
+    // Check if demo mode
+    const token = localStorage.getItem('pc_token');
+    if (!token || token === 'demo_token') {
+      // Simulate processing for demo
+      await runDemoProcessing();
+      window.location.href = '/advanced-dashboard.html';
+      return;
+    }
+
+    try {
+      const fd = new FormData();
+      fd.append('file', selectedFile);
+      if (title) fd.append('title', title);
+      setStep(1);
+      await API.documents.upload(fd);
+      await runDemoProcessing();
+      window.location.href = '/advanced-dashboard.html';
+    } catch (err) {
+      document.getElementById('procOverlay').classList.remove('show');
+      document.getElementById('uploadAlert').classList.add('show');
+      document.getElementById('alertMsg').textContent = err.message || 'Upload failed. Please try again.';
+      document.getElementById('btnLabel').style.display   = 'flex';
+      document.getElementById('btnSpinner').style.display = 'none';
+      document.getElementById('submitBtn').disabled = false;
+    }
+  });
+}
+
+const delay = ms => new Promise(r => setTimeout(r, ms));
+
+async function runDemoProcessing() {
+  const titles = ['','Extracting Text Content…','Generating Embeddings…','Running Similarity Analysis…','Generating Report…'];
+  for (let i = 1; i <= 5; i++) {
+    setStep(i);
+    if (titles[i]) document.getElementById('procTitle').textContent = titles[i];
+    document.getElementById('progBar').style.width = (i * 20) + '%';
+    await delay(600);
+  }
+  await delay(400);
+}
+
+function setStep(n) {
+  for (let i = 1; i <= 5; i++) {
+    const el = document.getElementById('st'+i);
+    if (!el) continue;
+    el.classList.remove('done','active');
+    const dot = el.querySelector('.step-dot');
+    if (i < n)      { el.classList.add('done');   if(dot) dot.innerHTML='<i class="fa-solid fa-check" style="font-size:.6rem"></i>'; }
+    else if (i===n) { el.classList.add('active'); }
+  }
+}
+
+// sidebar logout
+document.querySelectorAll('.logout-btn').forEach(b => b.addEventListener('click', e => {
+  e.preventDefault();
+  localStorage.removeItem('pc_token');
+  localStorage.removeItem('pc_user');
+  window.location.href = '/login.html';
+}));
+</script>
+</body>
+</html>

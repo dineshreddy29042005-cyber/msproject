@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>3D Visualization — PlagiaCheck</title>
+<link rel="stylesheet" href="css/advanced.css"/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+<style>
+canvas { display: block; }
+.viz-panel { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--r-lg); overflow: hidden; margin-bottom: 1.25rem; position: relative; }
+.viz-panel-hdr { padding: .85rem 1.1rem; border-bottom: 1px solid var(--border); background: var(--bg-card2); display: flex; align-items: center; justify-content: space-between; }
+.viz-panel-title { font-weight: 700; font-size: .95rem; display: flex; align-items: center; gap: .5rem; }
+#node-info { position: absolute; top: 1rem; right: 1rem; background: rgba(10,12,24,.96); border: 1px solid var(--border); border-radius: var(--r-md); padding: .85rem 1rem; font-size: .8rem; min-width: 240px; display: none; z-index: 20; box-shadow: var(--shadow-md); }
+.ni-title { font-weight: 700; font-size: .9rem; margin-bottom: .5rem; color: var(--text-primary); }
+.ni-row { display: flex; justify-content: space-between; gap: 1rem; margin-bottom: .25rem; font-size: .78rem; }
+.ni-row .lbl { color: var(--text-muted); } .ni-row .val { color: var(--text-primary); font-weight: 600; }
+.bars-3d-wrap { padding: 1.5rem; display: flex; align-items: flex-end; gap: 1.25rem; justify-content: center; min-height: 300px; background: radial-gradient(ellipse at center, #0f102a 0%, var(--bg-base) 100%); }
+.bar3d { display: flex; flex-direction: column; align-items: center; gap: .5rem; cursor: pointer; transition: transform .2s; }
+.bar3d:hover { transform: scale(1.08) translateY(-4px); }
+.bar3d-col { width: 56px; border-radius: 8px 8px 0 0; position: relative; transition: height 1.2s cubic-bezier(.34,1.2,.64,1); min-height: 8px; }
+.bar3d-shadow { position: absolute; bottom: -6px; left: 4px; right: -4px; height: 100%; border-radius: 8px 8px 0 0; opacity: .25; transform: skewX(8deg); }
+.bar3d-label { font-size: .7rem; font-weight: 700; text-align: center; color: var(--text-secondary); max-width: 65px; line-height: 1.3; }
+.bar3d-pct { font-family: 'Sora', sans-serif; font-size: 1rem; font-weight: 800; }
+.filter-row { display: flex; gap: .5rem; flex-wrap: wrap; padding: .75rem 1rem; background: var(--bg-card2); border-bottom: 1px solid var(--border); }
+/* Fixed tooltip */
+#semTooltip { position: fixed; z-index: 9999; pointer-events: none; background: rgba(10,12,24,.97); border: 1px solid var(--border); border-radius: var(--r-md); padding: .75rem 1rem; font-size: .8rem; box-shadow: var(--shadow-md); min-width: 200px; max-width: 280px; display: none; }
+</style>
+</head>
+<body>
+<div class="app-shell">
+<aside class="adv-sidebar">
+  <div class="sidebar-brand"><div class="brand-logo">P</div><div><div class="brand-text">PlagiaCheck</div><div class="brand-sub">Academic Integrity AI</div></div></div>
+  <div class="nav-section">
+    <div class="nav-section-label">Analysis</div>
+    <a href="advanced-dashboard.html" class="nav-item"><span class="nav-icon"><i class="fa-solid fa-gauge-high"></i></span><span>Overview</span></a>
+    <a href="comparison.html" class="nav-item"><span class="nav-icon"><i class="fa-solid fa-code-compare"></i></span><span>Document Comparison</span></a>
+    <a href="word-analysis.html" class="nav-item"><span class="nav-icon"><i class="fa-solid fa-spell-check"></i></span><span>Word Analysis</span></a>
+    <a href="visualization.html" class="nav-item active"><span class="nav-icon"><i class="fa-solid fa-cube"></i></span><span>3D Visualization</span></a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-label">Intelligence</div>
+    <a href="ai-assistant.html" class="nav-item"><span class="nav-icon"><i class="fa-solid fa-robot"></i></span><span>AI Assistant</span></a>
+    <a href="teacher-review.html" class="nav-item"><span class="nav-icon"><i class="fa-solid fa-user-check"></i></span><span>Teacher Review</span></a>
+    <a href="report.html" class="nav-item"><span class="nav-icon"><i class="fa-solid fa-file-lines"></i></span><span>Reports</span></a>
+  </div>
+  <div class="nav-section">
+    <a href="advanced-dashboard.html" class="nav-item"><span class="nav-icon"><i class="fa-solid fa-arrow-left"></i></span><span>Back</span></a>
+    <a href="#" class="nav-item logout-btn"><span class="nav-icon"><i class="fa-solid fa-right-from-bracket"></i></span><span>Logout</span></a>
+  </div>
+  <div class="sidebar-bottom"><div class="ai-status"><div class="ai-pulse"></div><div><div style="font-size:.8rem;font-weight:600">PlagiGuard AI</div><div style="font-size:.68rem;color:var(--text-muted)">Active</div></div></div></div>
+</aside>
+
+<div class="page-content">
+  <div class="adv-topbar">
+    <div class="topbar-left"><div class="breadcrumb"><a href="advanced-dashboard.html">Overview</a><span class="sep">/</span><span class="crumb-active">3D Visualization</span></div></div>
+    <div class="topbar-right">
+      <div class="analysis-badge"><div class="dot"></div>Interactive Visualization</div>
+      <div class="topbar-user-chip">
+        <div class="topbar-avatar" id="topbarAvatar">U</div>
+        <span id="topbarUserName">User</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="page-body">
+    <div class="section-header mb-2">
+      <div class="title">Semantic <span class="grad">Visualization</span></div>
+      <div class="subtitle">Drag to rotate · Scroll to zoom · Click nodes to inspect · All views are deterministic</div>
+    </div>
+
+    <!-- 1. Network Graph -->
+    <div class="viz-panel mb-3">
+      <div class="viz-panel-hdr">
+        <div class="viz-panel-title">🕸️ Semantic Similarity Network</div>
+        <div class="flex-gap" style="gap:.75rem">
+          <span style="font-size:.78rem;color:var(--text-muted)">Drag · Zoom · Click</span>
+          <button class="btn btn-outline btn-sm" onclick="resetNetwork()"><i class="fa-solid fa-arrows-rotate"></i> Reset</button>
+        </div>
+      </div>
+      <div style="position:relative">
+        <canvas id="networkCanvas" style="width:100%;cursor:grab"></canvas>
+        <div id="node-info">
+          <div class="ni-title" id="ni-title">—</div>
+          <div class="ni-row"><span class="lbl">Type</span><span class="val" id="ni-type">—</span></div>
+          <div class="ni-row"><span class="lbl">Section</span><span class="val" id="ni-sec">—</span></div>
+          <div class="ni-row"><span class="lbl">Similarity</span><span class="val" id="ni-sim">—</span></div>
+          <div class="ni-row"><span class="lbl">Match Type</span><span class="val" id="ni-mtype">—</span></div>
+          <div class="ni-row"><span class="lbl">Confidence</span><span class="val" id="ni-conf">—</span></div>
+          <div id="ni-text" style="margin-top:.5rem;padding-top:.5rem;border-top:1px solid var(--border);font-size:.75rem;color:var(--text-muted)"></div>
+          <button class="btn btn-outline btn-sm" style="width:100%;margin-top:.6rem" onclick="document.getElementById('node-info').style.display='none'">Close</button>
+        </div>
+        <div class="viz-legend">
+          <div class="viz-legend-item"><div class="viz-legend-dot" style="background:#6C63FF"></div>Student Doc</div>
+          <div class="viz-legend-item"><div class="viz-legend-dot" style="background:#FFB547"></div>Reference Doc</div>
+          <div class="viz-legend-item"><div class="viz-legend-dot" style="background:#FF4D6D"></div>High Match (&gt;80%)</div>
+          <div class="viz-legend-item"><div class="viz-legend-dot" style="background:#22C55E"></div>Low Match</div>
+          <div class="viz-legend-item"><div class="viz-legend-dot" style="background:#3B9EFF"></div>Source</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2. Section 3D Bars -->
+    <div class="viz-panel mb-3">
+      <div class="viz-panel-hdr">
+        <div class="viz-panel-title">📊 Section Similarity (3D View)</div>
+        <span style="font-size:.78rem;color:var(--text-muted)">Click a bar to open its comparison</span>
+      </div>
+      <div class="bars-3d-wrap" id="bars3d"></div>
+    </div>
+
+    <!-- 3. Semantic Space Scatter -->
+    <div class="viz-panel">
+      <div class="viz-panel-hdr">
+        <div class="viz-panel-title">🌌 Semantic Document Space</div>
+        <span style="font-size:.78rem;color:var(--text-muted)">Sentence embedding projection — hover to inspect</span>
+      </div>
+      <div class="filter-row" id="semFilters">
+        <span class="filter-chip active" onclick="filterSemSpace('all',this)">All</span>
+        <span class="filter-chip" onclick="filterSemSpace('high',this)">High Similarity</span>
+        <span class="filter-chip" onclick="filterSemSpace('paraphrase',this)">Paraphrase</span>
+        <span class="filter-chip" onclick="filterSemSpace('exact',this)">Exact</span>
+        <span class="filter-chip" onclick="filterSemSpace('original',this)">Original</span>
+      </div>
+      <canvas id="semSpaceCanvas" style="width:100%;cursor:crosshair"></canvas>
+    </div>
+
+    <!-- Fixed tooltip rendered outside canvas -->
+    <div id="semTooltip"></div>
+  </div>
+</div>
+</div>
+
+<button class="float-chat-btn" id="floatChatBtn">🤖<span class="notif">!</span></button>
+<div class="float-chat-panel" id="floatChatPanel">
+  <div class="chat-container">
+    <div class="chat-header"><div class="chat-avatar">🤖</div>
+      <div><div class="chat-name">PlagiGuard AI</div>
+        <div class="chat-status"><div style="width:6px;height:6px;border-radius:50%;background:var(--accent)"></div>Online</div>
+      </div>
+    </div>
+    <div class="chat-messages" id="floatMessages"></div>
+    <div class="chat-prompts">
+      <span class="prompt-chip">[Show top sources]</span>
+      <span class="prompt-chip">[Summary]</span>
+    </div>
+    <div class="chat-input-row">
+      <textarea class="chat-input" rows="1" placeholder="Ask about the visualization…"></textarea>
+      <button class="btn btn-primary chat-send-btn" style="padding:.55rem .8rem"><i class="fa-solid fa-paper-plane"></i></button>
+    </div>
+  </div>
+</div>
+<div class="toast-container" id="toastContainer"></div>
+<script src="js/engine.js"></script>
+<script>
+// Cancel animation loop when page unloads
+let _netRafId = null;
+window.addEventListener('pagehide', () => { if (_netRafId) cancelAnimationFrame(_netRafId); });
+
+document.addEventListener('DOMContentLoaded', () => {
+  initAdvNav();
+  initFloatingChat();
+  resizeAndBuildNetwork();
+  build3DBars();
+  resizeAndBuildSemSpace();
+
+  window.addEventListener('resize', () => {
+    resizeAndBuildNetwork();
+    resizeAndBuildSemSpace();
+  });
+});
+
+/* ───────────── Network Graph ───────────── */
+let netAngle = 0, netScale = 1, isDragging = false, lastMX = 0;
+let netNodes = [], netLinks = [];
+
+function resizeAndBuildNetwork() {
+  const canvas = document.getElementById('networkCanvas');
+  if (!canvas) return;
+  const W = canvas.parentElement.offsetWidth || 860;
+  canvas.width  = W;
+  canvas.height = Math.min(500, Math.round(W * 0.52));
+  netNodes = buildNetNodes(canvas.width / 2, canvas.height / 2);
+  netLinks = buildNetLinks(netNodes);
+  if (_netRafId) cancelAnimationFrame(_netRafId);
+  startNetworkAnim(canvas);
+}
+
+function buildNetNodes(cx, cy) {
+  const nodes = [];
+  nodes.push({ id:'student',   label:'Student Doc', ox:0,   oy:0,  oz:0,  r:22, color:'#6C63FF', type:'document', sim:100, section:'—', mtype:'—', conf:'—', text:MOCK_DATA.student.title });
+  nodes.push({ id:'reference', label:'Reference',   ox:120, oy:-20,oz:60, r:18, color:'#FFB547', type:'document', sim:47,  section:'—', mtype:'—', conf:'—', text:MOCK_DATA.reference.title });
+  const sects = MOCK_DATA.sections;
+  sects.forEach((s, i) => {
+    const a = (i / sects.length) * Math.PI * 2;
+    const r = 105;
+    nodes.push({ id:'sec_'+i, label:s.name, ox:Math.cos(a)*r, oy:Math.sin(a)*55-30, oz:Math.sin(a)*r,
+      r: 8 + s.score * 0.08, color: secColor(s.score), type:'section', sim:s.score, section:s.name, mtype:'—', conf:'—', text:`${s.matches} matches` });
+  });
+  MOCK_DATA.matches.slice(0, 8).forEach((m, i) => {
+    const a = (i / 8) * Math.PI * 2 + 0.4;
+    const d = 160;
+    const s = MOCK_DATA.student.sentences.find(x => x.id === m.studentId);
+    nodes.push({ id:'m_'+i, label:s?.section||'', ox:Math.cos(a)*d, oy:Math.sin(a)*70-15, oz:Math.sin(a)*d,
+      r: 5 + m.score * 0.055, color: matchColor(m.score), type:'match', sim:m.score, section:s?.section||'—',
+      mtype:m.type, conf:m.paraphraseConf+'%', text:(s?.text||'').substring(0,60)+'…' });
+  });
+  MOCK_DATA.sources.slice(0, 3).forEach((src, i) => {
+    const a = (i / 3) * Math.PI * 2 + 1;
+    const d = 195;
+    nodes.push({ id:'src_'+i, label:src.title.split('—')[0].trim().substring(0,18), ox:Math.cos(a)*d, oy:65, oz:Math.sin(a)*d,
+      r: 8 + src.pct * 0.28, color:'#3B9EFF', type:'source', sim:src.pct, section:'—', mtype:'—', conf:'—', text:src.url });
+  });
+  nodes.forEach(n => { n.rx = n.ox; n.ry = n.oy; n.rz = n.oz; });
+  return nodes;
+}
+
+function buildNetLinks(nodes) {
+  const links = [];
+  const student   = nodes.find(n => n.id === 'student');
+  const reference = nodes.find(n => n.id === 'reference');
+  nodes.filter(n => n.type === 'section').forEach(n => links.push({ a: student, b: n, s: 0.55 }));
+  nodes.filter(n => n.type === 'match').forEach(n => {
+    links.push({ a: student, b: n, s: n.sim / 150 });
+    if (reference) links.push({ a: reference, b: n, s: n.sim / 220 });
+  });
+  nodes.filter(n => n.type === 'source').forEach(n => {
+    if (reference) links.push({ a: reference, b: n, s: 0.38 });
+  });
+  return links;
+}
+
+function startNetworkAnim(canvas) {
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+
+  // Mouse drag
+  canvas.onmousedown = e => { isDragging = true; lastMX = e.offsetX; canvas.style.cursor = 'grabbing'; };
+  canvas.onmouseup   = () => { isDragging = false; canvas.style.cursor = 'grab'; };
+  canvas.onmouseleave= () => { isDragging = false; };
+  canvas.onmousemove = e => {
+    if (isDragging) { netAngle += (e.offsetX - lastMX) * 0.004; lastMX = e.offsetX; }
+    const hover = netNodes.find(n => { const p = proj(n, W/2, H/2); return Math.hypot(e.offsetX-p.x, e.offsetY-p.y) < n.r+4; });
+    canvas.style.cursor = hover ? 'pointer' : isDragging ? 'grabbing' : 'grab';
+  };
+  canvas.onclick = e => {
+    const clicked = netNodes.find(n => { const p = proj(n, W/2, H/2); return Math.hypot(e.offsetX-p.x, e.offsetY-p.y) < n.r+4; });
+    if (clicked) showNodeInfo(clicked);
+  };
+  canvas.onwheel = e => { e.preventDefault(); netScale = Math.max(0.4, Math.min(2.5, netScale - e.deltaY * 0.001)); };
+
+  function draw() {
+    _netRafId = requestAnimationFrame(draw);
+    ctx.clearRect(0, 0, W, H);
+
+    // Background
+    const bg = ctx.createRadialGradient(W/2, H/2, 0, W/2, H/2, Math.max(W,H));
+    bg.addColorStop(0, '#0f102a'); bg.addColorStop(1, '#0A0C18');
+    ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+
+    // Stars (deterministic with seed)
+    for (let i = 0; i < 100; i++) {
+      const sx = ((i * 137.5 + 50) % W);
+      const sy = ((i * 89.3 + 30) % H);
+      const sr = i % 7 === 0 ? 1.2 : 0.5;
+      ctx.beginPath(); ctx.arc(sx, sy, sr, 0, Math.PI*2);
+      ctx.fillStyle = `rgba(255,255,255,${0.08 + (i%5)*0.025})`; ctx.fill();
+    }
+
+    // Rotate nodes
+    netNodes.forEach(n => {
+      const cos = Math.cos(netAngle), sin = Math.sin(netAngle);
+      n.rx = n.ox * cos - n.oz * sin;
+      n.ry = n.oy;
+      n.rz = n.ox * sin + n.oz * cos;
+    });
+
+    // Links
+    netLinks.forEach(l => {
+      const a = proj(l.a, W/2, H/2), b = proj(l.b, W/2, H/2);
+      const grad = ctx.createLinearGradient(a.x, a.y, b.x, b.y);
+      grad.addColorStop(0, `rgba(108,99,255,${l.s*0.6})`);
+      grad.addColorStop(1, `rgba(0,217,181,${l.s*0.3})`);
+      ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y);
+      ctx.strokeStyle = grad; ctx.lineWidth = Math.max(0.5, l.s * 2.5); ctx.stroke();
+    });
+
+    // Nodes (sorted by depth)
+    [...netNodes].sort((a,b)=>a.rz-b.rz).forEach(n => {
+      const p = proj(n, W/2, H/2);
+      const rs = n.r * netScale;
+      ctx.shadowBlur = 14; ctx.shadowColor = n.color;
+      const g = ctx.createRadialGradient(p.x-rs*0.3, p.y-rs*0.3, 0, p.x, p.y, rs);
+      g.addColorStop(0, n.color + 'ff');
+      g.addColorStop(1, n.color + '88');
+      ctx.beginPath(); ctx.arc(p.x, p.y, rs, 0, Math.PI*2);
+      ctx.fillStyle = g; ctx.fill();
+      ctx.shadowBlur = 0;
+      if (rs > 10) {
+        ctx.fillStyle = 'rgba(255,255,255,.88)';
+        ctx.font = `bold ${Math.max(9, Math.round(9.5*netScale))}px Inter`;
+        ctx.textAlign = 'center';
+        ctx.fillText(n.label.substring(0,14), p.x, p.y + rs + 13);
+      }
+    });
+    netAngle += 0.002;
+  }
+  draw();
+}
+
+function proj(n, cx, cy) {
+  return { x: cx + n.rx * netScale, y: cy + n.ry * netScale - n.rz * 0.14 * netScale };
+}
+function secColor(s) { return s>=70?'#FF4D6D':s>=50?'#FF7A00':s>=25?'#FFB547':'#22C55E'; }
+function matchColor(s){ return s>=80?'#FF4D6D':s>=60?'#FF7A00':s>=40?'#FFB547':'#22C55E'; }
+
+function showNodeInfo(n) {
+  document.getElementById('ni-title').textContent  = n.label || n.id;
+  document.getElementById('ni-type').textContent   = n.type;
+  document.getElementById('ni-sec').textContent    = n.section;
+  document.getElementById('ni-sim').textContent    = n.sim + '%';
+  document.getElementById('ni-mtype').textContent  = n.mtype;
+  document.getElementById('ni-conf').textContent   = n.conf;
+  document.getElementById('ni-text').textContent   = n.text;
+  document.getElementById('node-info').style.display = 'block';
+}
+function resetNetwork() { netAngle = 0; netScale = 1; }
+
+/* ───────────── 3D Section Bars ───────────── */
+function build3DBars() {
+  const colors = ['#6C63FF','#FFB547','#3B9EFF','#22C55E','#FF7A00','#FF4D6D'];
+  const shadows= ['#5548e0','#e09a00','#1a80e0','#16a34a','#c05c00','#d03050'];
+  const container = document.getElementById('bars3d');
+  container.innerHTML = MOCK_DATA.sections.map((s, i) => `
+    <div class="bar3d" onclick="window.location='comparison.html?section=${encodeURIComponent(s.name)}'">
+      <div class="bar3d-pct" style="color:${colors[i]}">${s.score}%</div>
+      <div class="bar3d-col" id="bar3d_${i}" style="background:linear-gradient(180deg,${colors[i]},${colors[i]}cc);height:0px">
+        <div class="bar3d-shadow" style="background:${shadows[i]}"></div>
+      </div>
+      <div class="bar3d-label" style="color:${colors[i]}">${s.name}</div>
+      <div style="font-size:.65rem;color:var(--text-muted)">${s.matches} match${s.matches!==1?'es':''}</div>
+    </div>`).join('');
+  setTimeout(() => {
+    MOCK_DATA.sections.forEach((s, i) => {
+      const el = document.getElementById('bar3d_'+i);
+      if (el) el.style.height = (s.score * 2.2) + 'px';
+    });
+  }, 300);
+}
+
+/* ───────────── Semantic Space Scatter ───────────── */
+let semPoints = [], semFilter = 'all';
+
+// Seeded pseudo-random for reproducible layout
+function seededRand(seed) {
+  const x = Math.sin(seed) * 10000;
+  return x - Math.floor(x);
+}
+
+function resizeAndBuildSemSpace() {
+  const canvas = document.getElementById('semSpaceCanvas');
+  if (!canvas) return;
+  const W = canvas.parentElement.offsetWidth || 860;
+  canvas.width  = W;
+  canvas.height = Math.min(440, Math.round(W * 0.46));
+
+  // Build deterministic points
+  semPoints = [];
+  const W2 = canvas.width, H2 = canvas.height;
+  MOCK_DATA.student.sentences.forEach((s, i) => {
+    const match = MOCK_DATA.matches.find(m => m.studentId === s.id);
+    const px = 0.15*W2 + seededRand(i*7+1) * W2*0.35;
+    const py = 0.1*H2  + seededRand(i*13+3) * H2*0.8;
+    semPoints.push({ x:px, y:py, text:s.text, section:s.section, sim:match?.score||0,
+      type:match?.type||'ORIGINAL', conf:match?.paraphraseConf||0, doc:'Student',
+      color:match?matchColor(match.score):'#3B9EFF', r:match?7:5 });
+  });
+  MOCK_DATA.reference.sentences.forEach((r, i) => {
+    const match = MOCK_DATA.matches.find(m => m.refId === r.id);
+    const px = 0.5*W2 + seededRand(i*11+5) * W2*0.35;
+    const py = 0.1*H2  + seededRand(i*17+7) * H2*0.8;
+    semPoints.push({ x:px, y:py, text:r.text, section:r.section, sim:match?.score||0,
+      type:match?'REF_MATCH':'REFERENCE', conf:0, doc:'Reference',
+      color:match?'#FFB547':'rgba(255,181,71,.4)', r:match?6:4 });
+  });
+
+  drawSemSpace(canvas);
+  setupSemTooltip(canvas);
+}
+
+function drawSemSpace(canvas) {
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  ctx.clearRect(0, 0, W, H);
+  const bg = ctx.createLinearGradient(0, 0, W, H);
+  bg.addColorStop(0, '#0A0C18'); bg.addColorStop(1, '#0f102a');
+  ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+
+  // Grid
+  ctx.strokeStyle = 'rgba(255,255,255,.03)'; ctx.lineWidth = 1;
+  for (let x = 0; x < W; x += 60) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke(); }
+  for (let y = 0; y < H; y += 60) { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke(); }
+
+  // Zone labels
+  ctx.fillStyle = 'rgba(255,255,255,.06)'; ctx.font = 'bold 13px Inter'; ctx.textAlign = 'center';
+  ctx.fillText('STUDENT DOCUMENT SPACE', W*0.25, H*0.93);
+  ctx.fillText('REFERENCE DOCUMENT SPACE', W*0.75, H*0.93);
+
+  // Connections between matched pairs
+  MOCK_DATA.matches.filter(m => m.score > 55).forEach(m => {
+    const sp = semPoints.find(p => p.doc==='Student' && MOCK_DATA.student.sentences.findIndex(s=>s.id===m.studentId) === semPoints.indexOf(p) - MOCK_DATA.reference.sentences.length); // fallback
+    const stuIdx = MOCK_DATA.student.sentences.findIndex(s => s.id === m.studentId);
+    const refIdx = MOCK_DATA.reference.sentences.findIndex(r => r.id === m.refId);
+    const stuPt  = semPoints[stuIdx];
+    const refPt  = semPoints[MOCK_DATA.student.sentences.length + refIdx];
+    if (!stuPt || !refPt) return;
+    const grad = ctx.createLinearGradient(stuPt.x, stuPt.y, refPt.x, refPt.y);
+    grad.addColorStop(0, `rgba(108,99,255,${m.score/300})`);
+    grad.addColorStop(1, `rgba(255,181,71,${m.score/400})`);
+    ctx.beginPath(); ctx.moveTo(stuPt.x, stuPt.y); ctx.lineTo(refPt.x, refPt.y);
+    ctx.strokeStyle = grad; ctx.lineWidth = 1.2; ctx.stroke();
+  });
+
+  // Points
+  semPoints.forEach(p => {
+    if (!isSemVisible(p)) return;
+    ctx.shadowBlur = p.sim > 65 ? 14 : 5;
+    ctx.shadowColor = p.color;
+    const g = ctx.createRadialGradient(p.x-p.r*.3, p.y-p.r*.3, 0, p.x, p.y, p.r);
+    g.addColorStop(0, p.color); g.addColorStop(1, p.color.replace(')', ', 0.6)').replace('rgb','rgba'));
+    ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI*2);
+    ctx.fillStyle = p.color; ctx.fill();
+    ctx.shadowBlur = 0;
+  });
+}
+
+function isSemVisible(p) {
+  if (semFilter === 'all')       return true;
+  if (semFilter === 'high')      return p.sim >= 70;
+  if (semFilter === 'paraphrase')return p.type === 'PARAPHRASE';
+  if (semFilter === 'exact')     return p.type === 'EXACT';
+  if (semFilter === 'original')  return p.sim < 25;
+  return true;
+}
+
+function filterSemSpace(filter, el) {
+  semFilter = filter;
+  document.querySelectorAll('#semFilters .filter-chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  const canvas = document.getElementById('semSpaceCanvas');
+  if (canvas) drawSemSpace(canvas);
+}
+
+function setupSemTooltip(canvas) {
+  const tt = document.getElementById('semTooltip');
+  canvas.addEventListener('mousemove', e => {
+    const rect = canvas.getBoundingClientRect();
+    const mx = e.clientX - rect.left, my = e.clientY - rect.top;
+    const hit = semPoints.find(p => Math.hypot(p.x - mx, p.y - my) < p.r + 6);
+    if (hit) {
+      tt.style.display = 'block';
+      tt.style.left = (e.clientX + 16) + 'px';
+      tt.style.top  = (e.clientY - 10) + 'px';
+      tt.innerHTML = `<div style="font-weight:700;color:var(--text-primary);margin-bottom:.4rem">${hit.doc} — ${hit.section}</div>
+        <div style="color:var(--text-muted);font-style:italic;margin-bottom:.4rem">"${hit.text.substring(0,80)}${hit.text.length>80?'…':''}"</div>
+        <div>Similarity: <strong style="color:${hit.color}">${hit.sim}%</strong></div>
+        <div>Type: <strong>${hit.type}</strong></div>
+        ${hit.conf ? `<div>Paraphrase conf: <strong>${hit.conf}%</strong></div>` : ''}`;
+    } else {
+      tt.style.display = 'none';
+    }
+  });
+  canvas.addEventListener('mouseleave', () => { tt.style.display = 'none'; });
+}
+</script>
+</body>
+</html>

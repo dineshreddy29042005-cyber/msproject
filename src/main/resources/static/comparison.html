@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Document Comparison — PlagiaCheck</title>
+<link rel="stylesheet" href="css/advanced.css"/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+<style>
+.compare-wrap{display:grid;grid-template-columns:1fr 1fr;gap:1rem;height:calc(100vh - 160px)}
+.cpane{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--r-lg);display:flex;flex-direction:column;overflow:hidden}
+.cpane-hdr{padding:.75rem 1rem;border-bottom:1px solid var(--border);background:var(--bg-card2);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.cpane-title{font-weight:700;font-size:.88rem;display:flex;align-items:center;gap:.5rem}
+.cpane-body{flex:1;overflow-y:auto;padding:1.25rem;font-size:.86rem;line-height:2;scroll-behavior:smooth}
+.sent-block{display:block;padding:3px 4px;border-radius:4px;cursor:pointer;transition:background .15s;margin-bottom:2px;border-left:3px solid transparent}
+.sent-block:hover{background:rgba(108,99,255,.07)}
+.sent-selected{background:rgba(108,99,255,.13)!important;border-left-color:var(--primary)!important}
+.sent-match-orig{background:rgba(255,181,71,.15);border-left-color:var(--warning)}
+.sent-match-student{background:rgba(255,77,109,.13);border-left-color:var(--danger)}
+.sent-active{outline:2px solid var(--primary);border-radius:4px}
+.section-divider{font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--text-muted);margin:1rem 0 .4rem;padding:.25rem .5rem;background:var(--bg-card2);border-radius:var(--r-xs);display:inline-block}
+.match-info-bar{background:var(--bg-card2);border-top:1px solid var(--border);padding:.75rem 1rem;flex-shrink:0;font-size:.8rem;color:var(--text-secondary);display:flex;align-items:center;gap:1rem;flex-wrap:wrap}
+/* Word diff tab styles */
+.diff-legend{display:flex;gap:1rem;flex-wrap:wrap;padding:.75rem 1rem;background:var(--bg-card2);border-bottom:1px solid var(--border);font-size:.75rem}
+.dl-item{display:flex;align-items:center;gap:.4rem}
+.dl-dot{width:12px;height:4px;border-radius:2px}
+/* Phrase detection panel */
+.phrase-list{display:flex;flex-direction:column;gap:.5rem}
+.phrase-item{background:var(--bg-card2);border:1px solid var(--border);border-radius:var(--r-sm);padding:.65rem .85rem;font-size:.82rem}
+.phrase-text{font-family:'JetBrains Mono',monospace;color:var(--accent);font-size:.8rem}
+/* Transform panel */
+.tf-change{display:flex;align-items:center;gap:.5rem;padding:.35rem 0;font-size:.82rem;border-bottom:1px solid rgba(255,255,255,.04)}
+.tf-from{color:var(--danger);text-decoration:line-through}
+.tf-to{color:var(--success)}
+.tf-type{font-size:.68rem;color:var(--text-muted);padding:.1rem .45rem;background:var(--bg-card3);border-radius:10px}
+</style>
+</head>
+<body>
+<div class="app-shell">
+<!-- Sidebar -->
+<aside class="adv-sidebar">
+  <div class="sidebar-brand"><div class="brand-logo">P</div><div><div class="brand-text">PlagiaCheck</div><div class="brand-sub">Academic Integrity AI</div></div></div>
+  <div class="nav-section">
+    <div class="nav-section-label">Analysis</div>
+    <a href="advanced-dashboard.html" class="nav-item"><span class="nav-icon"><i class="fa-solid fa-gauge-high"></i></span><span>Overview</span></a>
+    <a href="comparison.html" class="nav-item active"><span class="nav-icon"><i class="fa-solid fa-code-compare"></i></span><span>Document Comparison</span></a>
+    <a href="word-analysis.html" class="nav-item"><span class="nav-icon"><i class="fa-solid fa-spell-check"></i></span><span>Word Analysis</span></a>
+    <a href="visualization.html" class="nav-item"><span class="nav-icon"><i class="fa-solid fa-cube"></i></span><span>3D Visualization</span></a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-label">Intelligence</div>
+    <a href="ai-assistant.html" class="nav-item"><span class="nav-icon"><i class="fa-solid fa-robot"></i></span><span>AI Assistant</span></a>
+    <a href="teacher-review.html" class="nav-item"><span class="nav-icon"><i class="fa-solid fa-user-check"></i></span><span>Teacher Review</span></a>
+    <a href="report.html" class="nav-item"><span class="nav-icon"><i class="fa-solid fa-file-lines"></i></span><span>Reports</span></a>
+  </div>
+  <div class="nav-section">
+    <a href="advanced-dashboard.html" class="nav-item"><span class="nav-icon"><i class="fa-solid fa-arrow-left"></i></span><span>Back</span></a>
+    <a href="#" class="nav-item logout-btn"><span class="nav-icon"><i class="fa-solid fa-right-from-bracket"></i></span><span>Logout</span></a>
+  </div>
+  <div class="sidebar-bottom"><div class="ai-status"><div class="ai-pulse"></div><div><div style="font-size:.8rem;font-weight:600">PlagiGuard AI</div><div style="font-size:.68rem;color:var(--text-muted)">Active</div></div></div></div>
+</aside>
+
+<div class="page-content">
+  <div class="adv-topbar">
+    <div class="topbar-left">
+      <div class="breadcrumb"><a href="advanced-dashboard.html">Overview</a><span class="sep">/</span><span class="crumb-active">Document Comparison</span></div>
+    </div>
+    <div class="topbar-right">
+      <div class="flex-gap" style="gap:.4rem">
+        <button class="btn btn-outline btn-sm" id="syncBtn" onclick="toggleSync()"><i class="fa-solid fa-link"></i> Sync Scroll ON</button>
+        <button class="btn btn-outline btn-sm" onclick="clearSelection()"><i class="fa-solid fa-eraser"></i> Clear</button>
+        <button class="btn btn-primary btn-sm" onclick="window.location='ai-assistant.html'"><i class="fa-solid fa-robot"></i> Ask AI</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="page-body" style="padding:1rem">
+    <!-- Tabs -->
+    <div style="display:flex;gap:.25rem;border-bottom:1px solid var(--border);margin-bottom:1rem;padding:0 .25rem">
+      <button class="tab-btn active" onclick="switchTab('compare',this)">Side-by-Side</button>
+      <button class="tab-btn" onclick="switchTab('worddiff',this)">Word Diff</button>
+      <button class="tab-btn" onclick="switchTab('phrases',this)">Phrase Detection</button>
+      <button class="tab-btn" onclick="switchTab('transform',this)">Sentence Transform</button>
+      <button class="tab-btn" onclick="switchTab('semantic',this)">Semantic Analysis</button>
+    </div>
+
+    <!-- TAB: Side by Side -->
+    <div id="tab-compare" class="tab-pane active">
+      <!-- Filters -->
+      <div class="filters-bar" style="margin-bottom:1rem;border-radius:var(--r-md);border:1px solid var(--border)">
+        <div class="filter-group"><span class="filter-label">Section:</span>
+          <select class="filter-select" id="sectionFilter" onchange="applyFilters()">
+            <option value="">All Sections</option>
+            <option>Introduction</option><option>Literature Review</option>
+            <option>Methodology</option><option>Results</option>
+            <option>Discussion</option><option>Conclusion</option>
+          </select>
+        </div>
+        <div class="filter-group"><span class="filter-label">Match Type:</span>
+          <select class="filter-select" id="typeFilter" onchange="applyFilters()">
+            <option value="">All</option><option>EXACT</option><option>SEMANTIC</option><option>PARAPHRASE</option><option>STRUCTURAL</option>
+          </select>
+        </div>
+        <div class="filter-group"><span class="filter-label">Min Score:</span>
+          <select class="filter-select" id="scoreFilter" onchange="applyFilters()">
+            <option value="0">All</option><option value="50">&gt;50%</option>
+            <option value="70">&gt;70%</option><option value="80">&gt;80%</option><option value="90">&gt;90%</option>
+          </select>
+        </div>
+        <div class="filter-group" style="margin-left:auto">
+          <div class="search-bar" style="width:200px">
+            <i class="fa-solid fa-magnifying-glass search-icon"></i>
+            <input type="text" placeholder="Search text…" id="textSearch" oninput="applyFilters()"/>
+          </div>
+        </div>
+      </div>
+
+      <div class="compare-wrap">
+        <!-- Reference -->
+        <div class="cpane">
+          <div class="cpane-hdr">
+            <div class="cpane-title"><i class="fa-solid fa-book" style="color:var(--warning)"></i> Reference Document</div>
+            <span style="font-size:.72rem;color:var(--text-muted)" id="refDocName"></span>
+          </div>
+          <div class="cpane-body" id="refPane"></div>
+          <div class="match-info-bar" id="refInfoBar" style="display:none"></div>
+        </div>
+        <!-- Student -->
+        <div class="cpane">
+          <div class="cpane-hdr">
+            <div class="cpane-title"><i class="fa-solid fa-user-graduate" style="color:var(--danger)"></i> Student Document</div>
+            <span style="font-size:.72rem;color:var(--text-muted)" id="stuDocName"></span>
+          </div>
+          <div class="cpane-body" id="stuPane"></div>
+          <div class="match-info-bar" id="stuInfoBar" style="display:none"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB: Word Diff -->
+    <div id="tab-worddiff" class="tab-pane">
+      <div class="diff-legend">
+        <div class="dl-item"><div class="dl-dot" style="background:var(--danger)"></div><span style="color:var(--text-secondary)">Exact Match</span></div>
+        <div class="dl-item"><div class="dl-dot" style="background:var(--accent)"></div><span style="color:var(--text-secondary)">Phrase Match</span></div>
+        <div class="dl-item"><div class="dl-dot" style="background:var(--warning)"></div><span style="color:var(--text-secondary)">Replaced Word</span></div>
+        <div class="dl-item"><div class="dl-dot" style="background:var(--primary)"></div><span style="color:var(--text-secondary)">Synonym</span></div>
+        <div class="dl-item"><div class="dl-dot" style="background:var(--success)"></div><span style="color:var(--text-secondary)">Added Word</span></div>
+        <div class="dl-item"><div class="dl-dot" style="background:rgba(255,255,255,.3)"></div><span style="color:var(--text-secondary)">Stopword</span></div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:.75rem;padding:1rem" id="wordDiffList"></div>
+    </div>
+
+    <!-- TAB: Phrase Detection -->
+    <div id="tab-phrases" class="tab-pane">
+      <div style="padding:1rem">
+        <div class="panel-header" style="border-radius:var(--r-md) var(--r-md) 0 0;margin-bottom:0">
+          <div class="panel-title"><span class="icon">🔍</span> Detected Copied Phrases</div>
+          <span style="font-size:.78rem;color:var(--text-muted)" id="phraseCount"></span>
+        </div>
+        <div style="background:var(--bg-card);border:1px solid var(--border);border-top:none;border-radius:0 0 var(--r-md) var(--r-md);padding:1rem">
+          <div class="phrase-list" id="phraseList"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB: Sentence Transform -->
+    <div id="tab-transform" class="tab-pane">
+      <div style="padding:1rem;display:flex;flex-direction:column;gap:1rem" id="transformList"></div>
+    </div>
+
+    <!-- TAB: Semantic Analysis -->
+    <div id="tab-semantic" class="tab-pane">
+      <div style="padding:1rem">
+        <div class="grid-2" style="gap:1rem;margin-bottom:1rem">
+          <div class="panel">
+            <div class="panel-header"><div class="panel-title">🧠 Semantic Similarity Matrix</div></div>
+            <div class="panel-body" id="semMatrix"></div>
+          </div>
+          <div class="panel">
+            <div class="panel-header"><div class="panel-title">📊 Confidence Breakdown</div></div>
+            <div class="panel-body" id="semBreakdown"></div>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="panel-header"><div class="panel-title">🏆 Top Semantic Matches</div></div>
+          <div class="panel-body" id="semTopMatches"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- Floating Chat -->
+<button class="float-chat-btn" id="floatChatBtn">🤖<span class="notif">!</span></button>
+<div class="float-chat-panel" id="floatChatPanel">
+  <div class="chat-container">
+    <div class="chat-header">
+      <div class="chat-avatar">🤖</div>
+      <div><div class="chat-name">PlagiGuard AI</div><div class="chat-status"><div style="width:6px;height:6px;border-radius:50%;background:var(--accent)"></div>Online</div></div>
+    </div>
+    <div class="chat-messages" id="floatMessages"></div>
+    <div class="chat-prompts">
+      <span class="prompt-chip">[Show suspicious sections]</span>
+      <span class="prompt-chip">[Find paraphrases]</span>
+      <span class="prompt-chip">[Explain similarity]</span>
+    </div>
+    <div class="chat-input-row">
+      <textarea class="chat-input" rows="1" placeholder="Ask about this comparison…"></textarea>
+      <button class="btn btn-primary chat-send-btn" style="padding:.55rem .8rem"><i class="fa-solid fa-paper-plane"></i></button>
+    </div>
+  </div>
+</div>
+<div class="toast-container" id="toastContainer"></div>
+<script src="js/engine.js"></script>
+<script>
+let syncScroll = true;
+let selectedMatch = null;
+let activeTab = 'compare';
+
+document.addEventListener('DOMContentLoaded',()=>{
+  initAdvNav(); initFloatingChat();
+  buildComparePanes();
+  buildWordDiff();
+  buildPhrases();
+  buildTransform();
+  buildSemantic();
+  initSync();
+});
+
+function switchTab(name, btn){
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.tab-pane').forEach(p=>p.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('tab-'+name).classList.add('active');
+  activeTab = name;
+}
+
+function toggleSync(){
+  syncScroll = !syncScroll;
+  document.getElementById('syncBtn').innerHTML = syncScroll
+    ? '<i class="fa-solid fa-link"></i> Sync Scroll ON'
+    : '<i class="fa-solid fa-link-slash"></i> Sync Scroll OFF';
+}
+
+function initSync(){
+  const ref = document.getElementById('refPane');
+  const stu = document.getElementById('stuPane');
+  if(!ref||!stu) return;
+  ref.addEventListener('scroll',()=>{ if(syncScroll) stu.scrollTop = ref.scrollTop; });
+  stu.addEventListener('scroll',()=>{ if(syncScroll) ref.scrollTop = stu.scrollTop; });
+}
+
+function buildComparePanes(){
+  document.getElementById('refDocName').textContent = MOCK_DATA.reference.filename;
+  document.getElementById('stuDocName').textContent = MOCK_DATA.student.filename;
+  const matchMap = {};
+  MOCK_DATA.matches.forEach(m=>{ matchMap[m.studentId]=m; matchMap[m.refId]=m; });
+
+  let lastSec='';
+  let refHtml='', stuHtml='';
+
+  MOCK_DATA.student.sentences.forEach(s=>{
+    if(s.section!==lastSec){
+      refHtml+=`<div class="section-divider">${s.section}</div>`;
+      stuHtml+=`<div class="section-divider">${s.section}</div>`;
+      lastSec=s.section;
+    }
+    const m = matchMap[s.id];
+    const refSent = m ? MOCK_DATA.reference.sentences.find(r=>r.id===m.refId) : null;
+    const mClass = m ? 'sent-match-student' : '';
+    stuHtml+=`<span class="sent-block ${mClass}" id="stu_${s.id}" onclick="selectMatch('${s.id}','student')" title="${m?m.type+' '+m.score+'%':''}">${s.text}</span>`;
+    if(refSent){
+      const rClass = 'sent-match-orig';
+      refHtml+=`<span class="sent-block ${rClass}" id="ref_${refSent.id}" onclick="selectMatch('${s.id}','ref')" title="${m.type} ${m.score}%">${refSent.text}</span>`;
+    } else {
+      const rSent = MOCK_DATA.reference.sentences.find((r,i)=>i===MOCK_DATA.student.sentences.indexOf(s));
+      if(rSent) refHtml+=`<span class="sent-block" id="ref_${rSent.id}">${rSent.text}</span>`;
+    }
+  });
+  document.getElementById('refPane').innerHTML = refHtml;
+  document.getElementById('stuPane').innerHTML = stuHtml;
+}
+
+function selectMatch(studentId, side){
+  document.querySelectorAll('.sent-block').forEach(el=>el.classList.remove('sent-selected','sent-active'));
+  const m = MOCK_DATA.matches.find(x=>x.studentId===studentId);
+  if(!m) return;
+  const stuEl = document.getElementById('stu_'+m.studentId);
+  const refEl = document.getElementById('ref_'+m.refId);
+  if(stuEl){ stuEl.classList.add('sent-selected'); stuEl.scrollIntoView({block:'nearest'}); }
+  if(refEl){ refEl.classList.add('sent-selected'); refEl.scrollIntoView({block:'nearest'}); }
+  activeMatch = m;
+  showMatchBars(m);
+}
+
+function showMatchBars(m){
+  const s = MOCK_DATA.student.sentences.find(x=>x.id===m.studentId);
+  const bar = `${matchChip(m.type)} &nbsp; Score: <strong style="color:${scoreColor(m.score)}">${m.score}%</strong> &nbsp;
+    Semantic: <strong style="color:var(--primary)">${m.semanticSim}%</strong> &nbsp;
+    Paraphrase: <strong style="color:var(--accent)">${m.paraphraseConf}%</strong> &nbsp;
+    Section: <strong>${s?.section}</strong> &nbsp;
+    Citation: <strong style="color:${m.citation?'var(--success)':'var(--danger)'}">${m.citation?'Found':'Missing'}</strong>`;
+  ['refInfoBar','stuInfoBar'].forEach(id=>{
+    const el=document.getElementById(id); el.innerHTML=bar; el.style.display='flex';
+  });
+}
+
+function clearSelection(){
+  document.querySelectorAll('.sent-block').forEach(el=>el.classList.remove('sent-selected','sent-active'));
+  ['refInfoBar','stuInfoBar'].forEach(id=>{ const el=document.getElementById(id); el.style.display='none'; });
+}
+
+function applyFilters(){
+  const sec   = document.getElementById('sectionFilter').value;
+  const type  = document.getElementById('typeFilter').value;
+  const score = parseInt(document.getElementById('scoreFilter').value)||0;
+  const q     = document.getElementById('textSearch').value.toLowerCase();
+  document.querySelectorAll('.sent-block[id^="stu_"]').forEach(el=>{
+    const sid = el.id.replace('stu_','');
+    const s   = MOCK_DATA.student.sentences.find(x=>x.id===sid);
+    const m   = MOCK_DATA.matches.find(x=>x.studentId===sid);
+    let show  = true;
+    if(sec && s?.section!==sec) show=false;
+    if(type && m?.type!==type) show=false;
+    if(score && (!m||m.score<score)) show=false;
+    if(q && !s?.text.toLowerCase().includes(q)) show=false;
+    el.style.display = show?'':'none';
+  });
+}
+
+function buildWordDiff(){
+  const container = document.getElementById('wordDiffList');
+  const highMatches = MOCK_DATA.matches.filter(m=>m.score>70).slice(0,6);
+  container.innerHTML = highMatches.map(m=>{
+    const s = MOCK_DATA.student.sentences.find(x=>x.id===m.studentId);
+    const r = MOCK_DATA.reference.sentences.find(x=>x.id===m.refId);
+    if(!s||!r) return '';
+    const diffHtml = buildWordDiff(s.text, r.text);
+    const phrases  = detectPhrases(s.text, r.text);
+    return `<div class="panel" style="margin:0">
+      <div class="panel-header">
+        <div class="panel-title">${matchChip(m.type)} <span style="font-size:.82rem;font-weight:500;color:var(--text-secondary)">${s.section}</span></div>
+        <div class="flex-gap" style="font-size:.78rem;gap:1rem">
+          <span>Exact: <strong style="color:var(--danger)">${m.exactOverlap}%</strong></span>
+          <span>Phrase: <strong style="color:var(--accent)">${m.phraseOverlap}%</strong></span>
+          <span>Semantic: <strong style="color:var(--primary)">${m.semanticSim}%</strong></span>
+        </div>
+      </div>
+      <div class="panel-body">
+        <div style="margin-bottom:.5rem;font-size:.68rem;font-weight:700;text-transform:uppercase;color:var(--text-muted)">Reference</div>
+        <div class="word-diff-wrap" style="background:var(--bg-card2);padding:.85rem;border-radius:var(--r-sm);margin-bottom:.85rem">${r.text}</div>
+        <div style="margin-bottom:.5rem;font-size:.68rem;font-weight:700;text-transform:uppercase;color:var(--text-muted)">Student (annotated)</div>
+        <div class="word-diff-wrap" style="background:var(--bg-card3);padding:.85rem;border-radius:var(--r-sm)">${diffHtml}</div>
+        ${phrases.length?`<div style="margin-top:.75rem;font-size:.78rem;color:var(--accent)"><i class="fa-solid fa-highlighter"></i> ${phrases.length} matching phrase${phrases.length!==1?'s':''} detected: <em>${phrases.slice(0,2).map(p=>'"'+p.phrase+'"').join(', ')}</em></div>`:''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function buildPhrases(){
+  const allPhrases = [];
+  MOCK_DATA.matches.forEach(m=>{
+    const s = MOCK_DATA.student.sentences.find(x=>x.id===m.studentId);
+    const r = MOCK_DATA.reference.sentences.find(x=>x.id===m.refId);
+    if(!s||!r) return;
+    const phrases = detectPhrases(s.text, r.text);
+    phrases.forEach(p=>allPhrases.push({...p, match:m, student:s, ref:r}));
+  });
+  document.getElementById('phraseCount').textContent = `${allPhrases.length} phrases detected`;
+  document.getElementById('phraseList').innerHTML = allPhrases.length
+    ? allPhrases.map(p=>`
+      <div class="phrase-item">
+        <div class="flex-between mb-1">
+          <div class="phrase-text">"${p.phrase}"</div>
+          <div class="flex-gap" style="gap:.5rem">
+            <span style="font-size:.72rem;color:var(--text-muted)">${p.length} words</span>
+            ${matchChip(p.match.type)}
+          </div>
+        </div>
+        <div style="font-size:.78rem;color:var(--text-muted)">Section: <strong style="color:var(--text-primary)">${p.student.section}</strong> &nbsp;|&nbsp;
+        Phrase overlap: <strong style="color:var(--accent)">${phraseOverlapPct(p.student.text, p.ref.text)}%</strong> &nbsp;|&nbsp;
+        Score: <strong style="color:${scoreColor(p.match.score)}">${p.match.score}%</strong></div>
+      </div>`)
+      .join('')
+    : '<div class="empty-state"><div class="empty-icon">✅</div><div class="empty-title">No significant phrases detected</div></div>';
+}
+
+function buildTransform(){
+  const container = document.getElementById('transformList');
+  const highMatches = MOCK_DATA.matches.filter(m=>m.paraphraseConf>75).slice(0,5);
+  container.innerHTML = highMatches.map(m=>{
+    const s = MOCK_DATA.student.sentences.find(x=>x.id===m.studentId);
+    const r = MOCK_DATA.reference.sentences.find(x=>x.id===m.refId);
+    if(!s||!r) return '';
+    const changes = analyzeTransformation(s.text, r.text);
+    const synChanges = changes.filter(c=>c.type==='synonym').slice(0,4);
+    const level = m.paraphraseConf>90?'VERY HIGH':m.paraphraseConf>80?'HIGH':'MODERATE';
+    return `<div class="panel" style="margin:0">
+      <div class="panel-header">
+        <div class="panel-title">🔄 Sentence Transformation — ${s.section}</div>
+        <div style="font-size:.78rem">Transformation Level: <strong style="color:${scoreColor(m.paraphraseConf)}">${level}</strong></div>
+      </div>
+      <div class="panel-body">
+        <div class="transform-flow">
+          <div class="tf-step">
+            <div class="tf-label">Original (Reference)</div>
+            <div class="tf-content" style="color:var(--text-secondary);font-style:italic">"${r.text}"</div>
+          </div>
+          ${synChanges.length?`<div class="tf-arrow">↓ Word Changes</div>
+          <div class="tf-step">
+            <div class="tf-label">Detected Changes</div>
+            <div>${synChanges.map(c=>`<div class="tf-change">
+              <span class="tf-from">${c.from}</span>
+              <i class="fa-solid fa-arrow-right" style="color:var(--text-muted);font-size:.75rem"></i>
+              <span class="tf-to">${c.to}</span>
+              <span class="tf-type">synonym</span>
+            </div>`).join('')}</div>
+          </div>`:''}
+          <div class="tf-arrow">↓ Resulting Student Text</div>
+          <div class="tf-step">
+            <div class="tf-label">Student Version</div>
+            <div class="tf-content" style="color:var(--text-primary);font-style:italic">"${s.text}"</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:1rem;flex-wrap:wrap;margin-top:.85rem;font-size:.8rem">
+          <span>Semantic sim: <strong style="color:var(--primary)">${m.semanticSim}%</strong></span>
+          <span>Paraphrase: <strong style="color:var(--accent)">${m.paraphraseConf}%</strong></span>
+          <span>Structural: <strong style="color:var(--info)">${m.structuralSim}%</strong></span>
+        </div>
+        <div class="ai-explanation" style="margin-top:.75rem">
+          <div class="ai-tag"><i class="fa-solid fa-robot"></i> AI Explanation</div>
+          ${AI_EXPLANATIONS[m.type]?.(m)||'Meaning preserved through sentence restructuring and synonym replacement.'}
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function buildSemantic(){
+  // Matrix
+  const topMatches = MOCK_DATA.matches.sort((a,b)=>b.semanticSim-a.semanticSim).slice(0,5);
+  document.getElementById('semMatrix').innerHTML = topMatches.map(m=>{
+    const s = MOCK_DATA.student.sentences.find(x=>x.id===m.studentId);
+    return `<div class="score-bar-wrap" style="margin-bottom:.75rem">
+      <div style="display:flex;justify-content:space-between;font-size:.78rem;margin-bottom:.3rem">
+        <span style="color:var(--text-secondary)">${s?.text?.substring(0,45)||''}…</span>
+        <span style="font-weight:800;color:var(--primary)">${m.semanticSim}%</span>
+      </div>
+      <div style="height:6px;background:rgba(255,255,255,.05);border-radius:3px;overflow:hidden">
+        <div style="height:100%;background:linear-gradient(90deg,var(--primary),var(--accent));width:${m.semanticSim}%;transition:width 1s ease"></div>
+      </div>
+      <div style="font-size:.7rem;color:var(--text-muted);margin-top:2px">${m.type} &nbsp;·&nbsp; Paraphrase: ${m.paraphraseConf}%</div>
+    </div>`;
+  }).join('');
+
+  // Breakdown
+  const k = MOCK_DATA.kpi;
+  document.getElementById('semBreakdown').innerHTML = [
+    ['Overall Semantic Score', k.overallSimilarity, 'var(--primary)'],
+    ['Paraphrase Confidence',  MOCK_DATA.matches.reduce((a,m)=>a+m.paraphraseConf,0)/MOCK_DATA.matches.length|0, 'var(--accent)'],
+    ['Structural Similarity',  MOCK_DATA.matches.reduce((a,m)=>a+m.structuralSim,0)/MOCK_DATA.matches.length|0, 'var(--info)'],
+    ['Phrase Overlap Avg',     MOCK_DATA.matches.reduce((a,m)=>a+m.phraseOverlap,0)/MOCK_DATA.matches.length|0, 'var(--warning)'],
+  ].map(([l,v,c])=>`
+    <div style="margin-bottom:1rem">
+      <div class="flex-between" style="font-size:.82rem;margin-bottom:.35rem">
+        <span style="color:var(--text-secondary)">${l}</span>
+        <span style="font-weight:800;color:${c}">${v}%</span>
+      </div>
+      <div style="height:8px;background:rgba(255,255,255,.05);border-radius:4px;overflow:hidden">
+        <div style="height:100%;background:${c};width:${v}%;transition:width 1s ease;border-radius:4px"></div>
+      </div>
+    </div>`).join('');
+
+  // Top matches
+  document.getElementById('semTopMatches').innerHTML = MOCK_DATA.matches
+    .filter(m=>m.semanticSim>80)
+    .sort((a,b)=>b.semanticSim-a.semanticSim)
+    .map(m=>{
+      const s = MOCK_DATA.student.sentences.find(x=>x.id===m.studentId);
+      const r = MOCK_DATA.reference.sentences.find(x=>x.id===m.refId);
+      return `<div style="background:var(--bg-card2);border:1px solid var(--border);border-radius:var(--r-md);padding:1rem;margin-bottom:.75rem">
+        <div class="flex-between mb-2">
+          <div>${matchChip(m.type)} <span style="font-size:.78rem;color:var(--text-muted);margin-left:.5rem">${s?.section}</span></div>
+          <div class="flex-gap" style="gap:.75rem;font-size:.82rem">
+            <span>Semantic: <strong style="color:var(--primary)">${m.semanticSim}%</strong></span>
+            <span>Paraphrase: <strong style="color:var(--accent)">${m.paraphraseConf}%</strong></span>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem">
+          <div style="background:var(--bg-card3);border-left:3px solid var(--warning);padding:.65rem;border-radius:var(--r-xs);font-size:.8rem;font-style:italic;color:var(--text-secondary)">${r?.text}</div>
+          <div style="background:var(--bg-card3);border-left:3px solid var(--danger);padding:.65rem;border-radius:var(--r-xs);font-size:.8rem;font-style:italic;color:var(--text-secondary)">${s?.text}</div>
+        </div>
+        <div class="ai-explanation" style="margin-top:.65rem">
+          <div class="ai-tag"><i class="fa-solid fa-robot"></i> AI</div>
+          ${AI_EXPLANATIONS[m.type]?.(m)||'High semantic similarity detected.'}
+        </div>
+      </div>`;
+    }).join('');
+}
+</script>
+</body>
+</html>

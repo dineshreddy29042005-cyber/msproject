@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>AI Assistant — PlagiaCheck</title>
+<link rel="stylesheet" href="css/advanced.css"/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+<style>
+.ai-layout{display:grid;grid-template-columns:1fr 360px;gap:1.25rem;height:calc(100vh - 140px)}
+.main-chat{display:flex;flex-direction:column;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--r-lg);overflow:hidden}
+.chat-header-full{padding:1rem 1.25rem;background:linear-gradient(135deg,rgba(108,99,255,.15),rgba(0,217,181,.08));border-bottom:1px solid var(--border);display:flex;align-items:center;gap:1rem}
+.ai-hero-avatar{width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,var(--primary),var(--accent));display:flex;align-items:center;justify-content:center;font-size:1.5rem;box-shadow:0 0 20px rgba(108,99,255,.5)}
+.ai-name{font-family:'Sora',sans-serif;font-size:1.1rem;font-weight:800}
+.ai-desc{font-size:.78rem;color:var(--text-secondary)}
+.messages-area{flex:1;overflow-y:auto;padding:1.25rem;display:flex;flex-direction:column;gap:1rem}
+.typing-indicator{display:flex;align-items:center;gap:.5rem;padding:.65rem .85rem;background:var(--bg-card2);border-radius:var(--r-md);border:1px solid var(--border);align-self:flex-start}
+.typing-dot{width:7px;height:7px;border-radius:50%;background:var(--primary);animation:typeDot 1.2s infinite}
+.typing-dot:nth-child(2){animation-delay:.2s}
+.typing-dot:nth-child(3){animation-delay:.4s}
+@keyframes typeDot{0%,80%,100%{transform:scale(1);opacity:.5}40%{transform:scale(1.3);opacity:1}}
+.prompt-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:.5rem;padding:1rem 1.25rem;border-top:1px solid var(--border);background:var(--bg-card2)}
+.big-prompt-chip{padding:.55rem .85rem;background:var(--bg-card3);border:1px solid var(--border);border-radius:var(--r-sm);font-size:.78rem;font-weight:600;color:var(--text-secondary);cursor:pointer;transition:var(--t-base);text-align:center}
+.big-prompt-chip:hover{border-color:var(--primary);color:var(--primary);background:var(--primary-light)}
+.input-area{display:flex;gap:.6rem;padding:1rem 1.25rem;border-top:1px solid var(--border);background:var(--bg-card2)}
+.full-input{flex:1;background:var(--bg-input);border:1px solid var(--border);border-radius:var(--r-md);padding:.7rem 1rem;color:var(--text-primary);font-size:.87rem;resize:none;outline:none;transition:var(--t-base);line-height:1.5}
+.full-input:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(108,99,255,.1)}
+/* Side panel */
+.side-panel{display:flex;flex-direction:column;gap:1rem;overflow-y:auto}
+.context-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--r-lg);overflow:hidden}
+.context-hdr{padding:.85rem 1rem;background:var(--bg-card2);border-bottom:1px solid var(--border);font-weight:700;font-size:.88rem;display:flex;align-items:center;gap:.5rem}
+.context-body{padding:1rem}
+.context-item{display:flex;align-items:flex-start;gap:.6rem;padding:.5rem 0;border-bottom:1px solid rgba(255,255,255,.04);font-size:.8rem}
+.context-item:last-child{border-bottom:none}
+.c-key{color:var(--text-muted);min-width:90px;flex-shrink:0}
+.c-val{color:var(--text-primary);font-weight:600}
+.history-item{padding:.55rem .75rem;border-radius:var(--r-sm);background:var(--bg-card2);border:1px solid var(--border);font-size:.78rem;color:var(--text-secondary);cursor:pointer;transition:var(--t-base);margin-bottom:.4rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.history-item:hover{border-color:var(--primary);color:var(--primary)}
+</style>
+</head>
+<body>
+<div class="app-shell">
+<aside class="adv-sidebar">
+  <div class="sidebar-brand"><div class="brand-logo">P</div><div><div class="brand-text">PlagiaCheck</div><div class="brand-sub">Academic Integrity AI</div></div></div>
+  <div class="nav-section">
+    <div class="nav-section-label">Analysis</div>
+    <a href="advanced-dashboard.html" class="nav-item"><span class="nav-icon"><i class="fa-solid fa-gauge-high"></i></span><span>Overview</span></a>
+    <a href="comparison.html" class="nav-item"><span class="nav-icon"><i class="fa-solid fa-code-compare"></i></span><span>Document Comparison</span></a>
+    <a href="word-analysis.html" class="nav-item"><span class="nav-icon"><i class="fa-solid fa-spell-check"></i></span><span>Word Analysis</span></a>
+    <a href="visualization.html" class="nav-item"><span class="nav-icon"><i class="fa-solid fa-cube"></i></span><span>3D Visualization</span></a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-label">Intelligence</div>
+    <a href="ai-assistant.html" class="nav-item active"><span class="nav-icon"><i class="fa-solid fa-robot"></i></span><span>AI Assistant</span></a>
+    <a href="teacher-review.html" class="nav-item"><span class="nav-icon"><i class="fa-solid fa-user-check"></i></span><span>Teacher Review</span></a>
+    <a href="report.html" class="nav-item"><span class="nav-icon"><i class="fa-solid fa-file-lines"></i></span><span>Reports</span></a>
+  </div>
+  <div class="nav-section">
+    <a href="advanced-dashboard.html" class="nav-item"><span class="nav-icon"><i class="fa-solid fa-arrow-left"></i></span><span>Back</span></a>
+    <a href="#" class="nav-item logout-btn"><span class="nav-icon"><i class="fa-solid fa-right-from-bracket"></i></span><span>Logout</span></a>
+  </div>
+  <div class="sidebar-bottom"><div class="ai-status"><div class="ai-pulse"></div><div><div style="font-size:.8rem;font-weight:600">PlagiGuard AI</div><div style="font-size:.68rem;color:var(--text-muted)">Active</div></div></div></div>
+</aside>
+
+<div class="page-content">
+  <div class="adv-topbar">
+    <div class="topbar-left"><div class="breadcrumb"><a href="advanced-dashboard.html">Overview</a><span class="sep">/</span><span class="crumb-active">AI Assistant</span></div></div>
+    <div class="topbar-right">
+      <div class="analysis-badge"><div class="dot"></div>PlagiGuard AI Active</div>
+      <button class="btn btn-outline btn-sm" onclick="clearChat()"><i class="fa-solid fa-trash"></i> Clear</button>
+    </div>
+  </div>
+
+  <div class="page-body">
+    <div class="ai-layout">
+      <!-- Main chat -->
+      <div class="main-chat">
+        <div class="chat-header-full">
+          <div class="ai-hero-avatar">🤖</div>
+          <div>
+            <div class="ai-name">PlagiGuard AI</div>
+            <div class="ai-desc">Plagiarism Intelligence Assistant — Analyzing: <strong>student_paper.pdf</strong></div>
+          </div>
+          <div style="margin-left:auto;display:flex;align-items:center;gap:.5rem">
+            <div class="ai-pulse"></div>
+            <span style="font-size:.78rem;color:var(--accent)">Online</span>
+          </div>
+        </div>
+
+        <div class="messages-area" id="messagesArea"></div>
+
+        <div class="prompt-grid">
+          <div class="big-prompt-chip" onclick="sendPrompt('Why was this paragraph flagged?')">Why was this flagged?</div>
+          <div class="big-prompt-chip" onclick="sendPrompt('Show me the most suspicious sections')">Show suspicious sections</div>
+          <div class="big-prompt-chip" onclick="sendPrompt('Which source contributed the most similarity?')">Show top sources</div>
+          <div class="big-prompt-chip" onclick="sendPrompt('Explain this plagiarism match in simple language')">Explain similarity</div>
+          <div class="big-prompt-chip" onclick="sendPrompt('Show all paraphrased content')">Find paraphrases</div>
+          <div class="big-prompt-chip" onclick="sendPrompt('Show me all matches that have no citation')">Check citations</div>
+          <div class="big-prompt-chip" onclick="sendPrompt('Why is the overall score 47%?')">Why 47% score?</div>
+          <div class="big-prompt-chip" onclick="sendPrompt('Which section has the highest plagiarism risk?')">Highest risk section</div>
+          <div class="big-prompt-chip" onclick="sendPrompt('Give me a summary of the plagiarism findings')">Full summary</div>
+          <div class="big-prompt-chip" onclick="sendPrompt('What percentage of the document appears original?')">Originality %</div>
+          <div class="big-prompt-chip" onclick="sendPrompt('Show exact word matches')">Exact matches</div>
+          <div class="big-prompt-chip" onclick="sendPrompt('Compare the student introduction with the original')">Compare intro</div>
+        </div>
+
+        <div class="input-area">
+          <textarea class="full-input" id="aiInput" rows="2"
+            placeholder="Ask anything about the analysis… e.g. 'Why was sentence 3 flagged?' or 'Show all paraphrased sections'"
+            onkeydown="handleKey(event)"></textarea>
+          <div style="display:flex;flex-direction:column;gap:.5rem">
+            <button class="btn btn-primary" id="sendBtn" onclick="sendMessage()"><i class="fa-solid fa-paper-plane"></i> Send</button>
+            <button class="btn btn-outline" onclick="sendPrompt('Give me a summary of the plagiarism findings')"><i class="fa-solid fa-list"></i> Summary</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Side panel -->
+      <div class="side-panel">
+        <!-- Document context -->
+        <div class="context-card">
+          <div class="context-hdr"><i class="fa-solid fa-circle-info" style="color:var(--primary)"></i> Analysis Context</div>
+          <div class="context-body">
+            <div class="context-item"><span class="c-key">Student Doc</span><span class="c-val">student_paper.pdf</span></div>
+            <div class="context-item"><span class="c-key">Reference</span><span class="c-val">reference_paper.pdf</span></div>
+            <div class="context-item"><span class="c-key">Overall Score</span><span class="c-val" style="color:var(--risk-high)">47%</span></div>
+            <div class="context-item"><span class="c-key">Originality</span><span class="c-val" style="color:var(--risk-low)">53%</span></div>
+            <div class="context-item"><span class="c-key">Sentences</span><span class="c-val">15 analyzed</span></div>
+            <div class="context-item"><span class="c-key">Matches</span><span class="c-val" id="ctxMatchCount">12 detected</span></div>
+            <div class="context-item"><span class="c-key">Sources</span><span class="c-val">5 found</span></div>
+          </div>
+        </div>
+
+        <!-- Match selector -->
+        <div class="context-card">
+          <div class="context-hdr"><i class="fa-solid fa-crosshairs" style="color:var(--danger)"></i> Focus on Match</div>
+          <div class="context-body">
+            <div style="font-size:.78rem;color:var(--text-muted);margin-bottom:.65rem">Select a match to give the AI specific context:</div>
+            <select id="matchSelector" class="filter-select" style="width:100%;padding:.5rem .75rem" onchange="setFocusMatch(this.value)">
+              <option value="">— All Matches —</option>
+            </select>
+            <div id="focusMatchInfo" style="margin-top:.75rem;display:none">
+              <div style="background:var(--bg-card3);border-left:3px solid var(--primary);padding:.65rem;border-radius:var(--r-xs);font-size:.78rem;font-style:italic;color:var(--text-secondary)" id="focusMatchText"></div>
+              <div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-top:.5rem;font-size:.72rem">
+                <span id="focusMatchType"></span>
+                <span style="color:var(--text-muted)" id="focusMatchScore"></span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Quick stats -->
+        <div class="context-card">
+          <div class="context-hdr"><i class="fa-solid fa-chart-simple" style="color:var(--accent)"></i> AI can answer about</div>
+          <div class="context-body">
+            <div style="display:flex;flex-direction:column;gap:.4rem">
+              <div style="font-size:.8rem;color:var(--text-secondary);padding:.35rem .5rem;background:var(--bg-card2);border-radius:var(--r-xs)">📍 Why specific passages were flagged</div>
+              <div style="font-size:.8rem;color:var(--text-secondary);padding:.35rem .5rem;background:var(--bg-card2);border-radius:var(--r-xs)">📊 Score calculations & breakdowns</div>
+              <div style="font-size:.8rem;color:var(--text-secondary);padding:.35rem .5rem;background:var(--bg-card2);border-radius:var(--r-xs)">🔍 Exact, semantic & paraphrase matches</div>
+              <div style="font-size:.8rem;color:var(--text-secondary);padding:.35rem .5rem;background:var(--bg-card2);border-radius:var(--r-xs)">📚 Source attribution details</div>
+              <div style="font-size:.8rem;color:var(--text-secondary);padding:.35rem .5rem;background:var(--bg-card2);border-radius:var(--r-xs)">✅ Citation coverage analysis</div>
+              <div style="font-size:.8rem;color:var(--text-secondary);padding:.35rem .5rem;background:var(--bg-card2);border-radius:var(--r-xs)">🔄 Paraphrase transformation details</div>
+            </div>
+            <div style="margin-top:.85rem;padding:.65rem;background:rgba(108,99,255,.07);border:1px solid rgba(108,99,255,.2);border-radius:var(--r-sm);font-size:.75rem;color:var(--text-muted)">
+              ⚠️ The AI provides evidence-based analysis. Final plagiarism determination is always made by the teacher.
+            </div>
+          </div>
+        </div>
+
+        <!-- Conversation history -->
+        <div class="context-card">
+          <div class="context-hdr"><i class="fa-solid fa-clock-rotate-left" style="color:var(--warning)"></i> Recent Questions</div>
+          <div class="context-body" id="historyList" style="max-height:200px;overflow-y:auto"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+<div class="toast-container" id="toastContainer"></div>
+
+<!-- Floating Chat Button -->
+<button class="float-chat-btn" id="floatChatBtn">🤖<span class="notif">!</span></button>
+<div class="float-chat-panel" id="floatChatPanel">
+  <div class="chat-container">
+    <div class="chat-header">
+      <div class="chat-avatar">🤖</div>
+      <div>
+        <div class="chat-name">PlagiGuard AI</div>
+        <div class="chat-status"><div style="width:6px;height:6px;border-radius:50%;background:var(--accent)"></div>Online</div>
+      </div>
+      <button class="btn btn-ghost btn-sm" style="margin-left:auto;font-size:.75rem" onclick="window.location='ai-assistant.html'">
+        <i class="fa-solid fa-expand"></i>
+      </button>
+    </div>
+    <div class="chat-messages" id="floatMessages"></div>
+    <div class="chat-prompts">
+      <span class="prompt-chip">[Summary]</span>
+      <span class="prompt-chip">[Top sources]</span>
+      <span class="prompt-chip">[Why flagged?]</span>
+    </div>
+    <div class="chat-input-row">
+      <textarea class="chat-input" rows="1" placeholder="Ask about the analysis…"></textarea>
+      <button class="btn btn-primary chat-send-btn" style="padding:.55rem .8rem">
+        <i class="fa-solid fa-paper-plane"></i>
+      </button>
+    </div>
+  </div>
+</div>>
+<script src="js/engine.js"></script>
+<script>
+let chatHistory = [];
+
+document.addEventListener('DOMContentLoaded',()=>{
+  initAdvNav();
+  initFloatingChat();
+  buildMatchSelector();
+  // Welcome message
+  addMessage('ai', `👋 Hi! I'm **PlagiGuard AI** — your dedicated plagiarism intelligence assistant.\n\nI've fully analyzed **"${MOCK_DATA.student.title}"** and found:\n• Overall similarity: **${MOCK_DATA.kpi.overallSimilarity}%**\n• Originality estimate: **${MOCK_DATA.kpi.originalityEstimate}%**\n• High-confidence matches: **${MOCK_DATA.kpi.highConfidenceMatches}**\n• Sources identified: **${MOCK_DATA.kpi.sourcesDetected}**\n\nUse the prompt buttons below or type any question about the analysis. I'll cite specific sentences and evidence in my answers.`);
+});
+
+function buildMatchSelector(){
+  const sel=document.getElementById('matchSelector');
+  MOCK_DATA.matches.forEach(m=>{
+    const s=MOCK_DATA.student.sentences.find(x=>x.id===m.studentId);
+    const opt=document.createElement('option');
+    opt.value=m.id;
+    opt.textContent=`${s?.section} — ${m.type} ${m.score}% — "${s?.text?.substring(0,40)}…"`;
+    sel.appendChild(opt);
+  });
+}
+
+function setFocusMatch(matchId){
+  if(!matchId){ document.getElementById('focusMatchInfo').style.display='none'; activeMatch=null; return; }
+  const m=MOCK_DATA.matches.find(x=>x.id===matchId);
+  activeMatch=m;
+  const s=MOCK_DATA.student.sentences.find(x=>x.id===m?.studentId);
+  document.getElementById('focusMatchInfo').style.display='block';
+  document.getElementById('focusMatchText').textContent=s?.text||'';
+  document.getElementById('focusMatchType').innerHTML=matchChip(m?.type);
+  document.getElementById('focusMatchScore').textContent=`Score: ${m?.score}%  Semantic: ${m?.semanticSim}%`;
+}
+
+function handleKey(e){
+  if(e.key==='Enter'&&!e.shiftKey){ e.preventDefault(); sendMessage(); }
+}
+
+function sendMessage(){
+  const input=document.getElementById('aiInput');
+  const text=input.value.trim();
+  if(!text) return;
+  input.value='';
+  sendPrompt(text);
+}
+
+function sendPrompt(text){
+  addMessage('user', text);
+  addHistory(text);
+  showTyping();
+  setTimeout(()=>{
+    removeTyping();
+    const resp=getAIResponse(text, activeMatch);
+    addMessage('ai', resp);
+  }, 700+Math.random()*500);
+}
+
+function addMessage(role, text){
+  const area=document.getElementById('messagesArea');
+  const isAI=role==='ai';
+  const div=document.createElement('div');
+  div.className=`chat-msg ${isAI?'':'user'}`;
+  div.innerHTML=`
+    <div class="chat-msg-avatar ${isAI?'msg-ai-avatar':'msg-user-avatar'}">${isAI?'🤖':'👤'}</div>
+    <div class="chat-bubble ${isAI?'bubble-ai':'bubble-user'}" style="max-width:85%">
+      ${isAI?renderMd(text):escHtml(text)}
+      ${isAI&&activeMatch?`<div class="chat-evidence">
+        <div class="ev-title">📍 Evidence Context</div>
+        Match: ${activeMatch.type} — Score: ${activeMatch.score}% — Semantic: ${activeMatch.semanticSim}%
+      </div>`:''}
+    </div>`;
+  area.appendChild(div);
+  area.scrollTop=area.scrollHeight;
+}
+
+let typingEl=null;
+function showTyping(){
+  const area=document.getElementById('messagesArea');
+  typingEl=document.createElement('div');
+  typingEl.className='chat-msg';
+  typingEl.innerHTML=`<div class="chat-msg-avatar msg-ai-avatar">🤖</div><div class="typing-indicator"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div>`;
+  area.appendChild(typingEl);
+  area.scrollTop=area.scrollHeight;
+}
+function removeTyping(){ if(typingEl){ typingEl.remove(); typingEl=null; } }
+
+function addHistory(text){
+  chatHistory.unshift(text);
+  chatHistory=chatHistory.slice(0,8);
+  const list=document.getElementById('historyList');
+  list.innerHTML='';
+  chatHistory.forEach(h=>{
+    const div=document.createElement('div');
+    div.className='history-item';
+    div.title=h;
+    div.textContent=h.substring(0,45)+(h.length>45?'…':'');
+    div.addEventListener('click',()=>sendPrompt(h));
+    list.appendChild(div);
+  });
+}
+
+function clearChat(){
+  document.getElementById('messagesArea').innerHTML='';
+  chatHistory=[];
+  document.getElementById('historyList').innerHTML='';
+  addMessage('ai','Chat cleared. How can I help you with the plagiarism analysis?');
+}
+</script>
+</body>
+</html>

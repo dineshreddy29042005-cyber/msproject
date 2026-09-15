@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PlagiaCheck — AI-Powered Plagiarism Detection</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <style>
+    /* Landing-only styles */
+    .nav-cta { display: flex; gap: 0.75rem; align-items: center; }
+    .floating-card {
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: var(--radius-lg); padding: 1.25rem 1.5rem;
+      display: inline-flex; align-items: center; gap: 0.75rem;
+      box-shadow: var(--shadow-card); animation: float 4s ease-in-out infinite;
+    }
+    .floating-card:nth-child(2) { animation-delay: 2s; }
+    @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-10px)} }
+    .hero-visual { position: relative; display: flex; justify-content: center; gap: 1.5rem; margin-top: 3rem; flex-wrap: wrap; }
+    .score-showcase {
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: var(--radius-xl); padding: 2rem;
+      max-width: 340px; width: 100%;
+      box-shadow: var(--shadow-glow);
+    }
+    .score-showcase-header { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1.5rem; }
+    .score-showcase-header .file-icon {
+      width: 40px; height: 40px; border-radius: 10px;
+      background: rgba(108,99,255,0.15); display: flex; align-items: center; justify-content: center;
+      font-size: 1.1rem; color: var(--primary);
+    }
+    .bar-section { margin-bottom: 0.75rem; }
+    .bar-row { display: flex; justify-content: space-between; font-size: 0.78rem; margin-bottom: 0.35rem; }
+    .bar-track { height: 6px; background: rgba(255,255,255,0.06); border-radius: 3px; overflow: hidden; }
+    .bar-fill { height: 100%; border-radius: 3px; }
+    .trusted-by { padding: 3rem 0; text-align: center; }
+    .trusted-logos { display: flex; justify-content: center; align-items: center; gap: 3rem; flex-wrap: wrap; margin-top: 1.5rem; opacity: 0.4; }
+    .trusted-logos span { font-size: 1rem; font-weight: 700; letter-spacing: 0.05em; color: var(--text-secondary); }
+    .cta-section {
+      padding: 5rem 1rem;
+      text-align: center;
+      background: radial-gradient(ellipse at center, rgba(108,99,255,0.12) 0%, transparent 70%);
+    }
+    .footer {
+      border-top: 1px solid var(--border); padding: 2rem 0;
+      text-align: center; font-size: 0.82rem; color: var(--text-muted);
+    }
+    .footer a { color: var(--primary); }
+  </style>
+</head>
+<body>
+
+<!-- Background -->
+<div class="grid-bg"></div>
+<div class="blob blob-1"></div>
+<div class="blob blob-2"></div>
+<div class="blob blob-3"></div>
+
+<!-- Navbar -->
+<nav class="navbar">
+  <a href="index.html" class="navbar-brand">
+    <div class="logo-icon">P</div>
+    PlagiaCheck
+  </a>
+  <ul class="navbar-nav">
+    <li><a href="#features">Features</a></li>
+    <li><a href="#how-it-works">How It Works</a></li>
+    <li><a href="#pricing">Pricing</a></li>
+  </ul>
+  <div class="nav-cta">
+    <a href="login.html" class="btn btn-outline btn-sm">Log In</a>
+    <a href="register.html" class="btn btn-primary btn-sm">Get Started</a>
+  </div>
+</nav>
+
+<!-- Hero -->
+<section class="hero container">
+  <div class="hero-badge">
+    <i class="fa-solid fa-shield-halved"></i>
+    AI-Powered Plagiarism Detection
+  </div>
+  <h1>
+    Detect Plagiarism<br/>
+    with <span class="grad">Precision & Speed</span>
+  </h1>
+  <p>
+    PlagiaCheck uses advanced NLP models and semantic analysis to identify exact, paraphrased,
+    and semantically similar content — giving you detailed reports in seconds.
+  </p>
+  <div class="hero-actions">
+    <a href="register.html" class="btn btn-primary btn-lg">
+      <i class="fa-solid fa-rocket"></i> Start for Free
+    </a>
+    <a href="login.html" class="btn btn-outline btn-lg">
+      <i class="fa-regular fa-circle-play"></i> See a Demo
+    </a>
+  </div>
+
+  <!-- Visual showcase -->
+  <div class="hero-visual">
+    <div class="score-showcase">
+      <div class="score-showcase-header">
+        <div class="file-icon"><i class="fa-solid fa-file-lines"></i></div>
+        <div>
+          <div style="font-weight:700;font-size:0.9rem;">Research_Paper.pdf</div>
+          <div style="font-size:0.75rem;color:var(--text-secondary)">Analyzed just now</div>
+        </div>
+        <span class="risk-HIGH" style="margin-left:auto">HIGH</span>
+      </div>
+      <!-- Score ring mockup -->
+      <div style="display:flex;justify-content:center;margin-bottom:1.5rem">
+        <svg width="120" height="120" viewBox="0 0 120 120">
+          <circle cx="60" cy="60" r="50" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="10"/>
+          <circle cx="60" cy="60" r="50" fill="none" stroke="url(#ringGrad)" stroke-width="10"
+            stroke-linecap="round" stroke-dasharray="314" stroke-dashoffset="110"
+            transform="rotate(-90 60 60)"/>
+          <defs>
+            <linearGradient id="ringGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" style="stop-color:#6C63FF"/>
+              <stop offset="100%" style="stop-color:#00D9B5"/>
+            </linearGradient>
+          </defs>
+          <text x="60" y="56" text-anchor="middle" fill="#F0F2FF" font-size="18" font-weight="800" font-family="Sora,sans-serif">65%</text>
+          <text x="60" y="72" text-anchor="middle" fill="#9499B8" font-size="9">Overall Score</text>
+        </svg>
+      </div>
+      <div class="bar-section">
+        <div class="bar-row"><span style="color:var(--text-secondary)">Exact Match</span><span style="font-weight:700">28%</span></div>
+        <div class="bar-track"><div class="bar-fill" style="width:28%;background:var(--danger)"></div></div>
+      </div>
+      <div class="bar-section">
+        <div class="bar-row"><span style="color:var(--text-secondary)">Semantic</span><span style="font-weight:700">45%</span></div>
+        <div class="bar-track"><div class="bar-fill" style="width:45%;background:var(--warning)"></div></div>
+      </div>
+      <div class="bar-section">
+        <div class="bar-row"><span style="color:var(--text-secondary)">Paraphrase</span><span style="font-weight:700">19%</span></div>
+        <div class="bar-track"><div class="bar-fill" style="width:19%;background:var(--primary)"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="hero-stats">
+    <div class="hero-stat-item">
+      <div class="hero-stat-value">99.2%</div>
+      <div class="hero-stat-label">Detection Accuracy</div>
+    </div>
+    <div class="hero-stat-item">
+      <div class="hero-stat-value">3s</div>
+      <div class="hero-stat-label">Avg Analysis Time</div>
+    </div>
+    <div class="hero-stat-item">
+      <div class="hero-stat-value">50M+</div>
+      <div class="hero-stat-label">Documents Indexed</div>
+    </div>
+    <div class="hero-stat-item">
+      <div class="hero-stat-value">10K+</div>
+      <div class="hero-stat-label">Happy Students</div>
+    </div>
+  </div>
+</section>
+
+<!-- Features -->
+<section class="features container" id="features">
+  <div class="text-center">
+    <div class="section-label">Why PlagiaCheck</div>
+    <div class="section-title">Three-Layer Detection Engine</div>
+    <div class="section-subtitle" style="margin:0 auto">
+      Our AI models go beyond keyword matching to catch every form of academic dishonesty.
+    </div>
+  </div>
+  <div class="features-grid">
+    <div class="feature-card">
+      <div class="feature-icon">🔍</div>
+      <div class="feature-title">Exact Match Detection</div>
+      <div class="feature-desc">Identifies verbatim copy-paste from any indexed source using fast n-gram fingerprinting.</div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🧠</div>
+      <div class="feature-title">Semantic Similarity</div>
+      <div class="feature-desc">Transformer-based embeddings detect conceptual overlap even when wording differs completely.</div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🔄</div>
+      <div class="feature-title">Paraphrase Detection</div>
+      <div class="feature-desc">Catches cleverly rewritten content using a dedicated paraphrase identification model.</div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">📊</div>
+      <div class="feature-title">Detailed Reports</div>
+      <div class="feature-desc">Section-level scores, highlighted text, source mapping, and actionable explanations.</div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">⚡</div>
+      <div class="feature-title">Real-Time Analysis</div>
+      <div class="feature-desc">Async processing pipeline delivers results in seconds regardless of document length.</div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🗃️</div>
+      <div class="feature-title">Multi-Format Support</div>
+      <div class="feature-desc">Upload PDF, DOCX, or plain text files — our pipeline handles extraction automatically.</div>
+    </div>
+  </div>
+</section>
+
+<!-- How It Works -->
+<section style="padding:4rem 0;position:relative;z-index:1" id="how-it-works">
+  <div class="container">
+    <div class="text-center mb-3">
+      <div class="section-label">How It Works</div>
+      <div class="section-title">From Upload to Report in 4 Steps</div>
+    </div>
+    <div class="steps mt-3">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-title">Upload Document</div>
+        <div class="step-desc">Upload your PDF, DOCX, or TXT file securely.</div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-title">NLP Processing</div>
+        <div class="step-desc">AI extracts text and generates semantic embeddings.</div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-title">Similarity Check</div>
+        <div class="step-desc">Three-layer engine compares against 50M+ sources.</div>
+      </div>
+      <div class="step">
+        <div class="step-num">4</div>
+        <div class="step-title">Get Report</div>
+        <div class="step-desc">Detailed dashboard with scores and highlighted matches.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cta-section">
+  <div class="container">
+    <div class="section-label" style="text-align:center">Get Started Today</div>
+    <h2 style="font-family:'Sora',sans-serif;font-size:clamp(1.6rem,3vw,2.4rem);font-weight:800;margin:0.5rem 0 1rem">
+      Academic Integrity Starts Here
+    </h2>
+    <p style="color:var(--text-secondary);max-width:480px;margin:0 auto 2rem;font-size:0.95rem">
+      Join thousands of students and educators who trust PlagiaCheck for reliable, fast, and transparent plagiarism reports.
+    </p>
+    <a href="register.html" class="btn btn-primary btn-lg">
+      <i class="fa-solid fa-user-plus"></i> Create Free Account
+    </a>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer class="footer">
+  <div class="container">
+    <p>© 2026 PlagiaCheck — Built by <a href="#">Codethon</a>. All rights reserved.</p>
+  </div>
+</footer>
+
+</body>
+</html>
