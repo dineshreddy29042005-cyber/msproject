@@ -1,6 +1,7 @@
 package com.codethon.microsoft.service;
 
 import com.codethon.microsoft.dto.DocumentDto;
+import com.codethon.microsoft.dynamodb.DynamoDbSyncService;
 import com.codethon.microsoft.entity.Document;
 import com.codethon.microsoft.entity.User;
 import com.codethon.microsoft.repository.DocumentRepository;
@@ -19,10 +20,11 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class DocumentService {
 
-    private final DocumentRepository documentRepository;
-    private final UserRepository userRepository;
-    private final FileStorageService fileStorageService;
-    private final AnalysisService analysisService;
+    private final DocumentRepository  documentRepository;
+    private final UserRepository      userRepository;
+    private final FileStorageService  fileStorageService;
+    private final AnalysisService     analysisService;
+    private final DynamoDbSyncService dynamoDbSyncService;
 
     private static final List<String> ALLOWED_TYPES = Arrays.asList(
             "application/pdf",
@@ -39,13 +41,12 @@ public class DocumentService {
         if (!ALLOWED_TYPES.contains(file.getContentType())) {
             throw new IllegalArgumentException("File type not supported. Allowed: PDF, DOCX, TXT");
         }
-
         if (file.getSize() > 10 * 1024 * 1024) {
             throw new IllegalArgumentException("File size must not exceed 10 MB");
         }
 
         String storedFilename = fileStorageService.storeFile(file);
-        String filePath = fileStorageService.getFilePath(storedFilename).toString();
+        String filePath       = fileStorageService.getFilePath(storedFilename).toString();
 
         Document document = Document.builder()
                 .title(title != null && !title.isBlank() ? title : file.getOriginalFilename())
@@ -59,6 +60,9 @@ public class DocumentService {
                 .build();
 
         document = documentRepository.save(document);
+
+        // Mirror to DynamoDB
+        dynamoDbSyncService.syncDocument(document);
 
         // Kick off async analysis
         analysisService.analyzeDocumentAsync(document.getId());
@@ -86,7 +90,6 @@ public class DocumentService {
     public void deleteDocument(Long id) throws IOException {
         Document document = documentRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Document not found: " + id));
-
         fileStorageService.deleteFile(document.getStoredFilename());
         documentRepository.delete(document);
     }

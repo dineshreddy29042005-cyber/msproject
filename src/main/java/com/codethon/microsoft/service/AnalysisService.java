@@ -1,5 +1,6 @@
 package com.codethon.microsoft.service;
 
+import com.codethon.microsoft.dynamodb.DynamoDbSyncService;
 import com.codethon.microsoft.dto.AnalysisResultDto;
 import com.codethon.microsoft.dto.DashboardStatsDto;
 import com.codethon.microsoft.dto.PlagiarismMatchDto;
@@ -26,6 +27,7 @@ public class AnalysisService {
     private final DocumentRepository documentRepository;
     private final PlagiarismMatchRepository plagiarismMatchRepository;
     private final UserRepository userRepository;
+    private final DynamoDbSyncService dynamoDbSyncService;
 
     @Async
     public void analyzeDocumentAsync(Long documentId) {
@@ -48,6 +50,7 @@ public class AnalysisService {
 
             document.setStatus(Document.DocumentStatus.COMPLETED);
             documentRepository.save(document);
+            dynamoDbSyncService.syncDocument(document);
 
             log.info("Analysis completed for document: {}", documentId);
         } catch (Exception e) {
@@ -89,6 +92,11 @@ public class AnalysisService {
         List<PlagiarismMatch> matches = buildMockMatches(result);
         plagiarismMatchRepository.saveAll(matches);
         result.setMatches(matches);
+
+        // Mirror result + matches to DynamoDB
+        dynamoDbSyncService.syncAnalysisResult(result);
+        final String resultId = result.getId().toString();
+        matches.forEach(m -> dynamoDbSyncService.syncMatch(m, resultId));
 
         return result;
     }

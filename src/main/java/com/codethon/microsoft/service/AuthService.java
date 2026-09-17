@@ -3,6 +3,7 @@ package com.codethon.microsoft.service;
 import com.codethon.microsoft.dto.AuthRequest;
 import com.codethon.microsoft.dto.AuthResponse;
 import com.codethon.microsoft.dto.RegisterRequest;
+import com.codethon.microsoft.dynamodb.DynamoDbSyncService;
 import com.codethon.microsoft.entity.User;
 import com.codethon.microsoft.repository.UserRepository;
 import com.codethon.microsoft.security.JwtUtil;
@@ -18,11 +19,12 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class AuthService {
 
-    private final UserRepository userRepository;
-    private final PasswordEncoder passwordEncoder;
-    private final JwtUtil jwtUtil;
+    private final UserRepository      userRepository;
+    private final PasswordEncoder     passwordEncoder;
+    private final JwtUtil             jwtUtil;
     private final AuthenticationManager authenticationManager;
-    private final UserDetailsService userDetailsService;
+    private final UserDetailsService  userDetailsService;
+    private final DynamoDbSyncService dynamoDbSyncService;
 
     public AuthResponse register(RegisterRequest request) {
         if (userRepository.existsByUsername(request.getUsername())) {
@@ -39,7 +41,10 @@ public class AuthService {
                 .role(User.Role.valueOf(request.getRole().toUpperCase()))
                 .build();
 
-        userRepository.save(user);
+        user = userRepository.save(user);
+
+        // Mirror to DynamoDB
+        dynamoDbSyncService.syncUser(user);
 
         UserDetails userDetails = userDetailsService.loadUserByUsername(user.getUsername());
         String token = jwtUtil.generateToken(userDetails);

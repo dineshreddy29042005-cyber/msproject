@@ -1,6 +1,8 @@
 spring:
   application:
     name: plagiacheck
+
+  # ── H2 in-memory (relational / auth layer) ────────────────
   datasource:
     url: jdbc:h2:mem:plagiacheck;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
     username: sa
@@ -19,8 +21,8 @@ spring:
     properties:
       hibernate:
         dialect: org.hibernate.dialect.H2Dialect
-        format_sql: true
     open-in-view: false
+
   # ── File Upload ────────────────────────────────────────────
   servlet:
     multipart:
@@ -37,11 +39,24 @@ server:
 # ── JWT ────────────────────────────────────────────────────────
 jwt:
   secret: PlagiaCheckSuperSecretKey2026XYZABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmn
-  expiration: 86400000   # 24 hours in ms
+  expiration: 86400000
 
 # ── File Storage ───────────────────────────────────────────────
 file:
   upload-dir: ./uploads
+
+# ── Local DynamoDB ─────────────────────────────────────────────
+dynamodb:
+  endpoint: http://localhost:8000
+  region: us-east-1
+  access-key: 2bqvic
+  secret-key: n1lfv6
+  # Tables to auto-create on startup
+  tables:
+    users:         pc_users
+    documents:     pc_documents
+    analysis:      pc_analysis_results
+    matches:       pc_plagiarism_matches
 
 # ── Actuator ───────────────────────────────────────────────────
 management:
@@ -59,3 +74,4 @@ logging:
     root: INFO
     com.codethon.microsoft: DEBUG
     org.springframework.security: WARN
+    software.amazon.awssdk: WARN
